@@ -14,6 +14,14 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, clearUserAfterLogout } = useContext(UserContext);
 
+  const handleLogoClick = () => {
+    if (user) {
+      navigate("/home"); // authenticated
+    } else {
+      navigate("/"); // public welcome page
+    }
+  };
+
   const handleLogout = () => {
     signOut();
     clearUserAfterLogout();
@@ -34,7 +42,7 @@ const Header = () => {
     >
       <Container>
         <Navbar.Brand
-          onClick={() => navigate("/")}
+          onClick={handleLogoClick}
           className="fw-bold fs-4"
           style={{ cursor: "pointer" }}
         >
