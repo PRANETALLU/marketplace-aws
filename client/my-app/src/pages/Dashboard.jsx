@@ -1,75 +1,92 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-//import { listProduct } from '../services/api';
+import React, { useContext, useEffect, useState } from "react";
+import { UserContext } from "../context/UserContext";
+import { Container, Row, Col, Card, Tab, Nav, Button, ListGroup, Spinner } from "react-bootstrap";
+import { fetchMyProducts, fetchOrdersPlaced } from "../services/dashboardApi";
 
-const Dashboard = ({ user }) => {
-  const navigate = useNavigate();
-  const [productData, setProductData] = useState({
-    name: '',
-    price: '',
-    description: '',
-    image: null,
-  });
-  const [error, setError] = useState('');
+const DashboardPage = () => {
+  const { user, loading } = useContext(UserContext);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [activeTab, setActiveTab] = useState("profile");
 
-  if (!user) {
-    navigate('/signin');
-    return null;
+  useEffect(() => {
+    if (!loading && user) {
+      fetchMyProducts().then(setProducts);
+      fetchOrdersPlaced().then(setOrders);
+    }
+  }, [user, loading]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" />
+      </div>
+    );
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    const formData = new FormData();
-    Object.keys(productData).forEach((key) => {
-      formData.append(key, productData[key]);
-    });
-
-    try {
-      //await listProduct(formData);
-      alert('Product listed successfully!');
-      setProductData({ name: '', price: '', description: '', image: null });
-    } catch (error) {
-      console.error('Error listing product:', error);
-      setError('Failed to list product');
-    }
-  };
+  if (!user) return <p>Please log in to view your dashboard.</p>;
 
   return (
-    <div className="seller-dashboard">
-      <h2>List New Product</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Product Name"
-          value={productData.name}
-          onChange={(e) => setProductData({ ...productData, name: e.target.value })}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Price"
-          value={productData.price}
-          onChange={(e) => setProductData({ ...productData, price: e.target.value })}
-          required
-        />
-        <textarea
-          placeholder="Description"
-          value={productData.description}
-          onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-          required
-        />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setProductData({ ...productData, image: e.target.files[0] })}
-          required
-        />
-        <button type="submit">Add Product</button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
+    <Container>
+      <h2 className="mb-4">Dashboard</h2>
+
+      <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+        <Row>
+          <Col md={3}>
+            <Nav variant="pills" className="flex-column">
+              <Nav.Item><Nav.Link eventKey="profile">👤 Profile Summary</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="products">🧑‍🎨 My Products</Nav.Link></Nav.Item>
+              <Nav.Item><Nav.Link eventKey="orders">🛒 My Orders</Nav.Link></Nav.Item>
+            </Nav>
+          </Col>
+
+          <Col md={9}>
+            <Tab.Content>
+              <Tab.Pane eventKey="profile">
+                <Card>
+                  <Card.Body>
+                    <h5>{user.username}</h5>
+                    <p>Email: {user.email}</p>
+                    <Button variant="primary">Edit Profile</Button>
+                  </Card.Body>
+                </Card>
+              </Tab.Pane>
+
+              <Tab.Pane eventKey="products">
+                <h5 className="mb-3">My Products</h5>
+                {products.length === 0 ? (
+                  <p>You haven't listed any products yet.</p>
+                ) : (
+                  <ListGroup>
+                    {products.map((p) => (
+                      <ListGroup.Item key={p.productId}>
+                        <strong>{p.productName}</strong> — ${p.price} (Qty: {p.quantity})
+                      </ListGroup.Item>
+                    ))}
+                  </ListGroup>
+                )}
+              </Tab.Pane>
+
+              <Tab.Pane eventKey="orders">
+                <h5 className="mb-3">My Orders</h5>
+                {orders.length === 0 ? (
+                  <p>You haven’t placed any orders yet.</p>
+                ) : (
+                  <ListGroup>
+                    {orders.map((o) => (
+                      <ListGroup.Item key={o.orderId}>
+                        Order #{o.orderId} — <strong>{o.status}</strong> — ${o.totalPrice}
+                      </ListGroup.Item>
+                    ))}
+                  </ListGroup>
+                )}
+              </Tab.Pane>
+            </Tab.Content>
+          </Col>
+        </Row>
+      </Tab.Container>
+    </Container>
   );
 };
 
-export default Dashboard;
+export default DashboardPage;
