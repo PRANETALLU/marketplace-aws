@@ -14,7 +14,8 @@ const ProductDetails = () => {
     const fetchProduct = async () => {
       try {
         const response = await getProductById(productId)
-        setProduct(response.data);
+        console.log(response)
+        setProduct(response);
       } catch (err) {
         setError("Failed to load product.");
       } finally {
@@ -24,6 +25,8 @@ const ProductDetails = () => {
 
     fetchProduct();
   }, [productId]);
+
+  console.log('Specific Product', product)
 
   if (loading) return <Spinner animation="border" className="mt-4" />;
   if (error) return <Alert variant="danger">{error}</Alert>;
