@@ -30,3 +30,23 @@ export const createProduct = async (formData) => {
   });
   return response.data;
 };
+
+export const deleteProduct = async (id) => {
+  const response = await api.delete(`/products/${id}`);
+  return response.data;
+};
+
+export const updateProduct = async (id, formData) => {
+  const isFormData = formData instanceof FormData;
+  const response = await api.put(
+    `/products/${id}`,
+    formData,
+    isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}
+  );
+  return response.data;
+};
+
+export const getProductsBySeller = async () => {
+  const response = await api.get('/products/seller');
+  return response.data;
+};
