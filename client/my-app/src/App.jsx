@@ -11,6 +11,7 @@ import { UserContext } from "./context/UserContext";
 import Header from "./components/Header";
 import Home from "./pages/Home";
 import { Container } from "react-bootstrap";
+import Cart from "./pages/Cart";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -54,14 +55,22 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              {/*<Route
+              <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
                 }
-              />*/}
+              />
+              <Route
+                path="/cart"
+                element={
+                  <ProtectedRoute>
+                    <Cart />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />} />
