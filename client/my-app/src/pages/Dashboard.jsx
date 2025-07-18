@@ -1,7 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
 import { UserContext } from "../context/UserContext";
 import { Container, Row, Col, Card, Tab, Nav, Button, ListGroup, Spinner } from "react-bootstrap";
-import { fetchMyProducts, fetchOrdersPlaced } from "../services/dashboardApi";
+//import { fetchMyProducts, fetchOrdersPlaced } from "../services/dashboardApi";
+import { getProductsBySeller } from "../services/products/api";
+import { getOrdersPlaced } from "../services/orders/api";
+import ProductCard from "../components/ProductCard";
 
 const DashboardPage = () => {
   const { user, loading } = useContext(UserContext);
@@ -11,8 +14,11 @@ const DashboardPage = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      fetchMyProducts().then(setProducts);
-      fetchOrdersPlaced().then(setOrders);
+      //fetchMyProducts().then(setProducts);
+      //fetchOrdersPlaced().then(setOrders);
+      getProductsBySeller().then(setProducts); 
+      getOrdersPlaced().then(setOrders); 
+
     }
   }, [user, loading]);
 
@@ -23,6 +29,9 @@ const DashboardPage = () => {
       </div>
     );
   }
+
+  console.log('My Products', products)
+  console.log('My Orders', orders)
 
   if (!user) return <p>Please log in to view your dashboard.</p>;
 
