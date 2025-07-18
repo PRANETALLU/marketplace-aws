@@ -1,32 +1,48 @@
-// removeCartItem.js
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
 
-const res = (code, body) => ({ statusCode: code, body: JSON.stringify(body) });
+const res = (code, body, isEmpty = false) => ({
+  statusCode: code,
+  headers: {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Credentials": true,
+  },
+  body: isEmpty ? "" : JSON.stringify(body),
+});
 
 exports.handler = async (event) => {
   try {
-    /* 1. Auth */
-    const buyerId = event.requestContext?.authorizer?.claims?.sub;
-    if (!buyerId) return res(401, { message: "Unauthorized" });
+    const userId = event.requestContext?.authorizer?.claims?.sub;
+    if (!userId) return res(401, { message: "Unauthorized" });
 
-    /* 2. Path param */
-    const cartId = event.pathParameters?.cartId;
-    if (!cartId) return res(400, { message: "`cartId` path parameter is required." });
+    const productId = event.pathParameters?.productId;
+    if (!productId) return res(400, { message: "`productId` path parameter is required." });
 
-    /* 3. Delete conditioned on userId */
-    await db.delete({
+    // Fetch the cart
+    const cartResult = await db.get({
       TableName: "CartsTable",
-      Key: { cartId },
-      ConditionExpression: "userId = :uid",
-      ExpressionAttributeValues: { ":uid": buyerId }
+      Key: { userId }
     }).promise();
 
-    return res(204, "");   // No Content
+    const cart = cartResult.Item;
+    if (!cart) return res(404, { message: "Cart not found" });
+
+    // Filter out the product to remove
+    const updatedItems = (cart.items || []).filter(item => item.productId !== productId);
+
+    // Update the cart
+    await db.update({
+      TableName: "CartsTable",
+      Key: { userId },
+      UpdateExpression: "SET items = :items, updatedAt = :updatedAt",
+      ExpressionAttributeValues: {
+        ":items": updatedItems,
+        ":updatedAt": new Date().toISOString(),
+      }
+    }).promise();
+
+    return res(204, "", true); // No Content
   } catch (err) {
-    if (err.code === "ConditionalCheckFailedException") {
-      return res(403, { message: "Forbidden: cart item not owned by user." });
-    }
     console.error("removeCartItem error:", err);
     return res(500, { message: "Internal server error." });
   }

@@ -7,6 +7,10 @@ exports.handler = async (event) => {
   if (!userId) {
     return {
       statusCode: 401,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true
+      },
       body: JSON.stringify({ message: "Unauthorized" }),
     };
   }
@@ -16,6 +20,10 @@ exports.handler = async (event) => {
   if (!productId || !quantity || quantity < 1) {
     return {
       statusCode: 400,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true
+      },
       body: JSON.stringify({ message: "productId and quantity (>=1) are required" }),
     };
   }
@@ -61,12 +69,20 @@ exports.handler = async (event) => {
 
     return {
       statusCode: cart.createdAt === cart.updatedAt ? 201 : 200, // 201 if new cart, else 200
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true
+      },
       body: JSON.stringify(cart),
     };
   } catch (error) {
     console.error("Add to cart error:", error);
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true
+      },
       body: JSON.stringify({ message: "Internal server error" }),
     };
   }
