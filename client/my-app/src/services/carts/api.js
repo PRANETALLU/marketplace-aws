@@ -13,3 +13,27 @@ api.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+// 🛒 Carts
+
+export const getCartItems = async () => {
+  const response = await api.get('/cart');
+  return response.data;
+};
+
+export const addToCart = async (cartItemData) => {
+  // cartItemData should contain { productId, qty }
+  const response = await api.post('/cart', cartItemData);
+  return response.data;
+};
+
+export const updateCartItem = async (productId, updatedData) => {
+  // updatedData can contain new quantity or product changes
+  const response = await api.put(`/cart/${productId}`, updatedData);
+  return response.data;
+};
+
+export const removeCartItem = async (productId) => {
+  const response = await api.delete(`/cart/${productId}`);
+  return response.data;
+};
