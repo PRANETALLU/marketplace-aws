@@ -34,12 +34,16 @@ exports.handler = async (event) => {
     await db.update({
       TableName: "CartsTable",
       Key: { userId },
-      UpdateExpression: "SET items = :items, updatedAt = :updatedAt",
+      UpdateExpression: "SET #items = :items, updatedAt = :updatedAt",
+      ExpressionAttributeNames: {
+        "#items": "items"
+      },
       ExpressionAttributeValues: {
         ":items": updatedItems,
         ":updatedAt": new Date().toISOString(),
       }
     }).promise();
+
 
     return res(204, "", true); // No Content
   } catch (err) {
