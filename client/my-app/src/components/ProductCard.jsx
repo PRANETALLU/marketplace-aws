@@ -1,8 +1,13 @@
 import React from "react";
+import { useContext } from "react";
+import { UserContext } from "../context/UserContext";
 import { Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product}) => {
+
+  const { user, loading } = useContext(UserContext);
+
   const onAddToCart = (product) => {
     console.log("Added to cart:", product);
     alert(`"${product.productName}" added to cart.`);
@@ -13,13 +18,17 @@ const ProductCard = ({ product }) => {
     alert(`Proceeding to buy "${product.productName}".`);
   };
 
+  const isOwner = user.sub === product.sellerId;
+
+  console.log('User Product Card', user); 
+  console.log('Seller Product Card', product.sellerId); 
+
   return (
     <div className="border rounded p-3 shadow-sm bg-white h-100">
       <Card className="h-100 border-0">
         <Card.Img
           variant="top"
           src={product.imageUrl || "https://via.placeholder.com/300"}
-          //alt={product.productName}
           style={{ height: "200px", objectFit: "cover" }}
         />
         <Card.Body>
@@ -35,17 +44,23 @@ const ProductCard = ({ product }) => {
             <strong>Category:</strong> {product.category}
           </Card.Text>
 
-          <div className="d-flex justify-content-between mt-3">
-            <Button
-              variant="outline-primary"
-              onClick={() => onAddToCart(product)}
-            >
-              Add to Cart
-            </Button>
-            <Button variant="success" onClick={() => onBuyNow(product)}>
-              Buy Now
-            </Button>
-          </div>
+          {!isOwner ? (
+            <div className="d-flex justify-content-between mt-3">
+              <Button
+                variant="outline-primary"
+                onClick={() => onAddToCart(product)}
+              >
+                Add to Cart
+              </Button>
+              <Button variant="success" onClick={() => onBuyNow(product)}>
+                Buy Now
+              </Button>
+            </div>
+          ) : (
+            <div className="text-muted mt-3">
+              You are the seller of this product.
+            </div>
+          )}
 
           <Button
             as={Link}
