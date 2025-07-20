@@ -3,15 +3,28 @@ import { useContext } from "react";
 import { UserContext } from "../context/UserContext";
 import { Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { addToCart } from "../services/carts/api";
 
-const ProductCard = ({ product}) => {
+const ProductCard = ({ product }) => {
 
   const { user, loading } = useContext(UserContext);
 
-  const onAddToCart = (product) => {
-    console.log("Added to cart:", product);
-    alert(`"${product.productName}" added to cart.`);
+  const onAddToCart = async (product) => {
+    try {
+      const cartItemData = {
+        productId: product.productId,
+        qty: 1, // default to 1 for now, can be made dynamic later
+      };
+
+      const result = await addToCart(cartItemData);
+      console.log("Cart add result:", result);
+      alert(`✅ "${product.productName}" added to cart.`);
+    } catch (error) {
+      console.error("❌ Error adding to cart:", error);
+      alert("Failed to add product to cart. Please try again.");
+    }
   };
+
 
   const onBuyNow = (product) => {
     console.log("Buying now:", product);
@@ -20,8 +33,8 @@ const ProductCard = ({ product}) => {
 
   const isOwner = user.sub === product.sellerId;
 
-  console.log('User Product Card', user); 
-  console.log('Seller Product Card', product.sellerId); 
+  console.log('User Product Card', user);
+  console.log('Seller Product Card', product.sellerId);
 
   return (
     <div className="border rounded p-3 shadow-sm bg-white h-100">
