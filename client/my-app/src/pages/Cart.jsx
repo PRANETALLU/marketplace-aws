@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Button, Form } from "react-bootstrap";
-import axios from "axios";
+import { Container, Row, Col, Card, Button, Form, Spinner } from "react-bootstrap";
+import { getCartItems, addToCart, removeCartItem } from "../services/carts/api";
+import { getProductById } from "../services/products/api";
 
 const Cart = () => {
-  const [cart, setCart] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [productDetails, setProductDetails] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -12,10 +14,20 @@ const Cart = () => {
 
   const fetchCart = async () => {
     try {
-      const response = await axios.get("/cart"); // Replace with your API endpoint
-      setCart(response.data);
+      const cart = await getCartItems();
+      setCartItems(cart.items || []);
+
+      // Fetch product details in parallel
+      const productMap = {};
+      await Promise.all(
+        cart.items.map(async (item) => {
+          const product = await getProductById(item.productId);
+          productMap[item.productId] = product;
+        })
+      );
+      setProductDetails(productMap);
     } catch (error) {
-      console.error("Failed to fetch cart:", error);
+      console.error("Failed to fetch cart or product info:", error);
     } finally {
       setLoading(false);
     }
@@ -24,7 +36,7 @@ const Cart = () => {
   const handleQuantityChange = async (productId, quantity) => {
     if (quantity < 1) return;
     try {
-      await axios.post("/cart", { productId, quantity });
+      await addToCart({ productId, qty: quantity }); // API expects { productId, qty }
       fetchCart();
     } catch (error) {
       console.error("Failed to update quantity:", error);
@@ -33,7 +45,7 @@ const Cart = () => {
 
   const handleRemoveItem = async (productId) => {
     try {
-      await axios.delete(`/cart/item/${productId}`);
+      await removeCartItem(productId);
       fetchCart();
     } catch (error) {
       console.error("Failed to remove item:", error);
@@ -41,48 +53,53 @@ const Cart = () => {
   };
 
   const getTotalPrice = () => {
-    return cart?.items?.reduce(
-      (acc, item) => acc + item.quantity * item.price,
-      0
-    );
+    return cartItems.reduce((acc, item) => {
+      const product = productDetails[item.productId];
+      return acc + (product?.price || 0) * item.quantity;
+    }, 0);
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (!cart || cart.items.length === 0) return <p>Your cart is empty.</p>;
+  if (loading) return <Spinner animation="border" className="mt-4" />;
+  if (!cartItems.length) return <p>Your cart is empty.</p>;
 
   return (
     <Container>
       <h2 className="my-4">Your Shopping Cart</h2>
-      {cart.items.map((item) => (
-        <Card key={item.productId} className="mb-3">
-          <Card.Body>
-            <Row>
-              <Col md={6}>
-                <h5>{item.title || `Product #${item.productId}`}</h5>
-                <p>${item.price.toFixed(2)}</p>
-              </Col>
-              <Col md={3}>
-                <Form.Control
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) =>
-                    handleQuantityChange(item.productId, parseInt(e.target.value))
-                  }
-                />
-              </Col>
-              <Col md={3} className="text-end">
-                <Button
-                  variant="danger"
-                  onClick={() => handleRemoveItem(item.productId)}
-                >
-                  Remove
-                </Button>
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
-      ))}
+      {cartItems.map((item) => {
+        const product = productDetails[item.productId];
+        if (!product) return null;
+
+        return (
+          <Card key={item.productId} className="mb-3">
+            <Card.Body>
+              <Row>
+                <Col md={6}>
+                  <h5>{product.productName}</h5>
+                  <p>${product.price.toFixed(2)}</p>
+                </Col>
+                <Col md={3}>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      handleQuantityChange(item.productId, parseInt(e.target.value))
+                    }
+                  />
+                </Col>
+                <Col md={3} className="text-end">
+                  <Button
+                    variant="danger"
+                    onClick={() => handleRemoveItem(item.productId)}
+                  >
+                    Remove
+                  </Button>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        );
+      })}
       <Card className="mt-4">
         <Card.Body className="d-flex justify-content-between align-items-center">
           <h5>Total: ${getTotalPrice().toFixed(2)}</h5>
