@@ -24,6 +24,7 @@ export const getCartItems = async () => {
 export const addToCart = async (cartItemData) => {
   // cartItemData should contain { productId, qty }
   const response = await api.post('/cart', cartItemData);
+  console.log('Backend addToCart', response)
   return response.data;
 };
 
