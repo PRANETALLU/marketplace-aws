@@ -12,6 +12,7 @@ import Header from "./components/Header";
 import Home from "./pages/Home";
 import { Container } from "react-bootstrap";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -68,6 +69,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Cart />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <Checkout />
                   </ProtectedRoute>
                 }
               />
