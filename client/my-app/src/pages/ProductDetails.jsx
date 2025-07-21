@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Card, Button, Spinner, Alert } from "react-bootstrap";
 import { getProductById } from "../services/products/api";
+import { useContext } from "react";
+import { UserContext } from "../context/UserContext";
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -10,6 +12,8 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const { user } = useContext(UserContext);
+  
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -27,6 +31,9 @@ const ProductDetails = () => {
   }, [productId]);
 
   console.log('Specific Product', product)
+
+  const isOwner = user?.sub === product?.sellerId;
+
 
   if (loading) return <Spinner animation="border" className="mt-4" />;
   if (error) return <Alert variant="danger">{error}</Alert>;

@@ -1,12 +1,21 @@
 import React, { useContext, useEffect, useState } from "react";
 import { UserContext } from "../context/UserContext";
-import { Container, Row, Col, Card, Tab, Nav, Button, ListGroup, Spinner } from "react-bootstrap";
-//import { fetchMyProducts, fetchOrdersPlaced } from "../services/dashboardApi";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Tab,
+  Nav,
+  Button,
+  ListGroup,
+  Spinner,
+} from "react-bootstrap";
+import { Link } from "react-router-dom";
 import { getProductsBySeller } from "../services/products/api";
 import { getOrdersPlaced } from "../services/orders/api";
-import ProductCard from "../components/ProductCard";
 
-const DashboardPage = () => {
+const Dashboard = () => {
   const { user, loading } = useContext(UserContext);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -14,11 +23,8 @@ const DashboardPage = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      //fetchMyProducts().then(setProducts);
-      //fetchOrdersPlaced().then(setOrders);
-      getProductsBySeller().then(setProducts); 
-      getOrdersPlaced().then(setOrders); 
-
+      getProductsBySeller().then(setProducts);
+      getOrdersPlaced().then(setOrders);
     }
   }, [user, loading]);
 
@@ -30,22 +36,30 @@ const DashboardPage = () => {
     );
   }
 
-  console.log('My Products', products)
-  console.log('My Orders', orders)
-
   if (!user) return <p>Please log in to view your dashboard.</p>;
 
   return (
     <Container>
-      <h2 className="mb-4">Dashboard</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dashboard</h2>
+        <Button as={Link} to="/cart" variant="info">
+          🛒 View Cart
+        </Button>
+      </div>
 
       <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
         <Row>
           <Col md={3}>
             <Nav variant="pills" className="flex-column">
-              <Nav.Item><Nav.Link eventKey="profile">👤 Profile Summary</Nav.Link></Nav.Item>
-              <Nav.Item><Nav.Link eventKey="products">🧑‍🎨 My Products</Nav.Link></Nav.Item>
-              <Nav.Item><Nav.Link eventKey="orders">🛒 My Orders</Nav.Link></Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="profile">👤 Profile Summary</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="products">🧑‍🎨 My Products</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="orders">📦 My Orders</Nav.Link>
+              </Nav.Item>
             </Nav>
           </Col>
 
@@ -69,7 +83,8 @@ const DashboardPage = () => {
                   <ListGroup>
                     {products.map((p) => (
                       <ListGroup.Item key={p.productId}>
-                        <strong>{p.productName}</strong> — ${p.price} (Qty: {p.quantity})
+                        <strong>{p.productName}</strong> — ${p.price} (Qty:{" "}
+                        {p.quantity})
                       </ListGroup.Item>
                     ))}
                   </ListGroup>
@@ -84,7 +99,8 @@ const DashboardPage = () => {
                   <ListGroup>
                     {orders.map((o) => (
                       <ListGroup.Item key={o.orderId}>
-                        Order #{o.orderId} — <strong>{o.status}</strong> — ${o.totalPrice}
+                        Order #{o.orderId} — <strong>{o.status}</strong> — $
+                        {o.totalPrice}
                       </ListGroup.Item>
                     ))}
                   </ListGroup>
@@ -98,4 +114,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default Dashboard;
