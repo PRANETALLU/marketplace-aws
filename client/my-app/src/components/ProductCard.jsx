@@ -4,17 +4,20 @@ import { UserContext } from "../context/UserContext";
 import { Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { addToCart } from "../services/carts/api";
+import { useNavigate } from "react-router-dom";
 
 const ProductCard = ({ product }) => {
 
   const { user, loading } = useContext(UserContext);
+  const navigate = useNavigate(); 
 
   const onAddToCart = async (product) => {
     try {
       const cartItemData = {
         productId: product.productId,
-        qty: 1, // default to 1 for now, can be made dynamic later
+        quantity: 1, // default to 1 for now, can be made dynamic later
       };
+      console.log('Cart Item', cartItemData)
 
       const result = await addToCart(cartItemData);
       console.log("Cart add result:", result);
@@ -28,13 +31,13 @@ const ProductCard = ({ product }) => {
 
   const onBuyNow = (product) => {
     console.log("Buying now:", product);
-    alert(`Proceeding to buy "${product.productName}".`);
+    navigate("/checkout", { state: { product, quantity: 1 } });
   };
 
   const isOwner = user.sub === product.sellerId;
 
-  console.log('User Product Card', user);
-  console.log('Seller Product Card', product.sellerId);
+  //console.log('User Product Card', user);
+  //console.log('Seller Product Card', product.sellerId);
 
   return (
     <div className="border rounded p-3 shadow-sm bg-white h-100">
