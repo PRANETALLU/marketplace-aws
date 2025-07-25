@@ -1,26 +1,27 @@
-import React from "react";
-import { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { UserContext } from "../context/UserContext";
-import { Card, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Card, Button, Modal, Form } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
 import { addToCart } from "../services/carts/api";
-import { useNavigate } from "react-router-dom";
 import { getOrdersPlaced } from "../services/orders/api";
+import { createReviewForProduct } from "../services/reviews/api"; // ✅
 
 const ProductCard = ({ product }) => {
-
   const { user, loading } = useContext(UserContext);
   const [hasPurchased, setHasPurchased] = useState(false);
-  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
 
-  const isOwner = user.sub === product.sellerId;
+  const navigate = useNavigate();
+  const isOwner = user?.sub === product?.sellerId;
 
   useEffect(() => {
     const checkIfPurchased = async () => {
       try {
-        if (!user || !user.sub || isOwner) return;
+        if (!user?.sub || isOwner) return;
 
-        const orders = await getOrdersPlaced(); // [{ orderId, products: [{ productId, quantity, ... }] }]
+        const orders = await getOrdersPlaced();
         const purchased = orders.some(
           (order) => order.productId === product.productId
         );
@@ -33,31 +34,47 @@ const ProductCard = ({ product }) => {
     checkIfPurchased();
   }, [user, product.productId, isOwner]);
 
-  const onAddToCart = async (product) => {
+  const onAddToCart = async () => {
     try {
       const cartItemData = {
         productId: product.productId,
-        quantity: 1, // default to 1 for now, can be made dynamic later
+        quantity: 1,
       };
-      console.log('Cart Item', cartItemData)
 
-      const result = await addToCart(cartItemData);
-      console.log("Cart add result:", result);
+      await addToCart(cartItemData);
       alert(`✅ "${product.productName}" added to cart.`);
     } catch (error) {
       console.error("❌ Error adding to cart:", error);
-      alert("Failed to add product to cart. Please try again.");
+      alert("Failed to add product to cart.");
     }
   };
 
-
-  const onBuyNow = (product) => {
-    console.log("Buying now:", product);
+  const onBuyNow = () => {
     navigate("/checkout", { state: { product, quantity: 1 } });
   };
 
-  //console.log('User Product Card', user);
-  //console.log('Seller Product Card', product.sellerId);
+  const handleReviewSubmit = async () => {
+    try {
+      const reviewData = {
+        productId: product.productId,
+        rating,
+        comment,
+      };
+
+      const response = await createReviewForProduct(reviewData);
+      alert("✅ Review submitted!");
+      setShowModal(false);
+      setRating(5);
+      setComment("");
+    } catch (err) {
+      if (err.response?.status === 403) {
+        alert("❌ You can only review products you’ve purchased.");
+      } else {
+        console.error("Review error:", err);
+        alert("❌ Failed to submit review.");
+      }
+    }
+  };
 
   return (
     <div className="border rounded p-3 shadow-sm bg-white h-100">
@@ -82,13 +99,10 @@ const ProductCard = ({ product }) => {
 
           {!isOwner ? (
             <div className="d-flex justify-content-between mt-3">
-              <Button
-                variant="outline-primary"
-                onClick={() => onAddToCart(product)}
-              >
+              <Button variant="outline-primary" onClick={onAddToCart}>
                 Add to Cart
               </Button>
-              <Button variant="success" onClick={() => onBuyNow(product)}>
+              <Button variant="success" onClick={onBuyNow}>
                 Buy Now
               </Button>
             </div>
@@ -111,14 +125,57 @@ const ProductCard = ({ product }) => {
             <Button
               variant="outline-secondary"
               size="sm"
-              className="mt-1"
-              onClick={goToReviewPage}
+              className="mt-2"
+              onClick={() => setShowModal(true)}
             >
               Add Review
             </Button>
           )}
         </Card.Body>
       </Card>
+
+      {/* ✅ Review Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Review for {product.productName}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group controlId="reviewRating">
+              <Form.Label>Rating</Form.Label>
+              <Form.Control
+                as="select"
+                value={rating}
+                onChange={(e) => setRating(Number(e.target.value))}
+              >
+                {[5, 4, 3, 2, 1].map((r) => (
+                  <option key={r} value={r}>
+                    {r} Star{r > 1 ? "s" : ""}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
+
+            <Form.Group controlId="reviewComment" className="mt-3">
+              <Form.Label>Comment (optional)</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleReviewSubmit}>
+            Submit Review
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
