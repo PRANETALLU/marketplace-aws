@@ -1,15 +1,37 @@
 import React from "react";
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import { UserContext } from "../context/UserContext";
 import { Card, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { addToCart } from "../services/carts/api";
 import { useNavigate } from "react-router-dom";
+import { getOrdersPlaced } from "../services/orders/api";
 
 const ProductCard = ({ product }) => {
 
   const { user, loading } = useContext(UserContext);
-  const navigate = useNavigate(); 
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const navigate = useNavigate();
+
+  const isOwner = user.sub === product.sellerId;
+
+  useEffect(() => {
+    const checkIfPurchased = async () => {
+      try {
+        if (!user || !user.sub || isOwner) return;
+
+        const orders = await getOrdersPlaced(); // [{ orderId, products: [{ productId, quantity, ... }] }]
+        const purchased = orders.some(
+          (order) => order.productId === product.productId
+        );
+        setHasPurchased(purchased);
+      } catch (error) {
+        console.error("Error checking purchase history:", error);
+      }
+    };
+
+    checkIfPurchased();
+  }, [user, product.productId, isOwner]);
 
   const onAddToCart = async (product) => {
     try {
@@ -33,8 +55,6 @@ const ProductCard = ({ product }) => {
     console.log("Buying now:", product);
     navigate("/checkout", { state: { product, quantity: 1 } });
   };
-
-  const isOwner = user.sub === product.sellerId;
 
   //console.log('User Product Card', user);
   //console.log('Seller Product Card', product.sellerId);
@@ -86,6 +106,17 @@ const ProductCard = ({ product }) => {
           >
             View Details
           </Button>
+
+          {!isOwner && hasPurchased && (
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="mt-1"
+              onClick={goToReviewPage}
+            >
+              Add Review
+            </Button>
+          )}
         </Card.Body>
       </Card>
     </div>
