@@ -1,39 +1,39 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Card, Button, Spinner, Alert } from "react-bootstrap";
 import { getProductById } from "../services/products/api";
-import { useContext } from "react";
 import { UserContext } from "../context/UserContext";
 
 const ProductDetails = () => {
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const { user } = useContext(UserContext);
-  
+
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndReviews = async () => {
       try {
-        const response = await getProductById(productId)
-        console.log(response)
+        const response = await getProductById(productId);
         setProduct(response);
+
+        const reviewsRes = await axios.get(`/api/reviews/product/${productId}`);
+        setReviews(reviewsRes.data);
       } catch (err) {
-        setError("Failed to load product.");
+        console.error(err);
+        setError("Failed to load product or reviews.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProduct();
+    fetchProductAndReviews();
   }, [productId]);
 
-  console.log('Specific Product', product)
-
   const isOwner = user?.sub === product?.sellerId;
-
 
   if (loading) return <Spinner animation="border" className="mt-4" />;
   if (error) return <Alert variant="danger">{error}</Alert>;
@@ -68,6 +68,26 @@ const ProductDetails = () => {
           <Button variant="success">Buy Now</Button>
         </Card.Body>
       </Card>
+
+      {/* Reviews Section */}
+      <div className="mt-5">
+        <h4>Customer Reviews</h4>
+        {reviews.length === 0 ? (
+          <p>No reviews yet.</p>
+        ) : (
+          reviews.map((review) => (
+            <Card key={review.reviewId} className="my-3">
+              <Card.Body>
+                <Card.Title>Rating: {review.rating} / 5</Card.Title>
+                <Card.Text>{review.comment}</Card.Text>
+                <Card.Subtitle className="text-muted" style={{ fontSize: '0.85rem' }}>
+                  Reviewed by {review.buyerId} on {new Date(review.createdAt).toLocaleString()}
+                </Card.Subtitle>
+              </Card.Body>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };
