@@ -4,6 +4,7 @@ import axios from "axios";
 import { Card, Button, Spinner, Alert } from "react-bootstrap";
 import { getProductById } from "../services/products/api";
 import { UserContext } from "../context/UserContext";
+import { getReviewsForProduct } from "../services/reviews/api";
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -20,8 +21,8 @@ const ProductDetails = () => {
         const response = await getProductById(productId);
         setProduct(response);
 
-        const reviewsRes = await axios.get(`/api/reviews/product/${productId}`);
-        setReviews(reviewsRes.data);
+        const reviewsRes = await getReviewsForProduct(productId);
+        setReviews(reviewsRes);
       } catch (err) {
         console.error(err);
         setError("Failed to load product or reviews.");
