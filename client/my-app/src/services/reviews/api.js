@@ -20,8 +20,8 @@ export const getReviewsForProduct = async (productId) => {
 };
 
 // Create a review for a product
-export const createReviewForProduct = async (reviewData) => {
-  const response = await api.post('/reviews', reviewData);
+export const createReviewForProduct = async ({ productId, rating, comment }) => {
+  const response = await api.post(`/reviews/${productId}`, { rating, comment });
   return response.data;
 };
 
