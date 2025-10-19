@@ -13,8 +13,7 @@ build
 dist-ssr
 *.local
 .env
-.env.staging
-.env.production
+.env.*
 
 
 # Editor directories and files
