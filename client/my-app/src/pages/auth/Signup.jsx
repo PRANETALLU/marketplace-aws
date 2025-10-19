@@ -1,92 +1,94 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signUp, confirmSignUp } from '../../services/auth';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Form, Button, Card, Container, Alert } from "react-bootstrap";
+import { signUp } from "../../services/auth";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    code: '',
+    username: "",
+    email: "",
+    password: "",
   });
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
+    setLoading(true);
 
-    if (!isConfirming) {
-      try {
-        await signUp(formData.username, formData.email, formData.password);
-        setIsConfirming(true);
-      } catch (err) {
-        setError(err.message || 'Failed to sign up');
-      }
-    } else {
-      try {
-        await confirmSignUp(formData.username, formData.code);
-        alert('Account confirmed! Please sign in.');
-        navigate('/login');
-      } catch (err) {
-        setError(err.message || 'Failed to confirm account');
-      }
+    try {
+      await signUp(formData.username, formData.email, formData.password);
+      alert("Signup successful! Please login.");
+      navigate("/login");
+    } catch (err) {
+      setError(err.message || "Signup failed. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
-      <h2>{isConfirming ? 'Confirm Your Account' : 'Sign Up'}</h2>
-      <form onSubmit={handleSubmit}>
-        {!isConfirming && (
-          <>
-            <input
+    <Container
+      fluid
+      className="d-flex justify-content-center align-items-center vh-100 bg-light px-3"
+    >
+      <Card className="p-4 shadow-lg border-0" style={{ maxWidth: "400px", width: "100%" }}>
+        <h3 className="text-center mb-4 text-primary fw-bold">Sign Up</h3>
+
+        {error && <Alert variant="danger">{error}</Alert>}
+
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3">
+            <Form.Label>Username</Form.Label>
+            <Form.Control
               type="text"
-              placeholder="Username"
+              placeholder="Enter username"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               required
             />
-            <input
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Email</Form.Label>
+            <Form.Control
               type="email"
-              placeholder="Email"
+              placeholder="Enter email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
-            <input
+          </Form.Group>
+
+          <Form.Group className="mb-4">
+            <Form.Label>Password</Form.Label>
+            <Form.Control
               type="password"
-              placeholder="Password"
+              placeholder="Enter password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
-          </>
-        )}
-        {isConfirming && (
-          <>
-            <input
-              type="text"
-              placeholder="Username"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              required
-              disabled
-            />
-            <input
-              type="text"
-              placeholder="Verification Code"
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-              required
-            />
-          </>
-        )}
-        <button type="submit">{isConfirming ? 'Confirm' : 'Sign Up'}</button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
+          </Form.Group>
+
+          <Button type="submit" variant="primary" className="w-100" disabled={loading}>
+            {loading ? "Signing up..." : "Sign Up"}
+          </Button>
+
+          <div className="text-center mt-3">
+            <small>
+              Already have an account?{" "}
+              <span className="text-primary fw-semibold" role="button" onClick={() => navigate("/login")}>
+                Login
+              </span>
+            </small>
+          </div>
+        </Form>
+      </Card>
+    </Container>
   );
 };
 

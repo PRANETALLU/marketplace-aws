@@ -1,88 +1,53 @@
 import React, { useContext } from "react";
-import {
-  Container,
-  Button,
-  Navbar,
-  Nav,
-  NavDropdown,
-} from "react-bootstrap";
+import { Navbar, Nav, Container, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
-import { signOut } from "../services/auth";
 
 const Header = () => {
+  const { user, logout } = useContext(UserContext);
   const navigate = useNavigate();
-  const { user, clearUserAfterLogout } = useContext(UserContext);
 
-  const handleLogoClick = () => {
-    if (user) {
-      navigate("/home"); // authenticated
-    } else {
-      navigate("/"); // public welcome page
-    }
-  };
-
-  const handleLogout = () => {
-    signOut();
-    clearUserAfterLogout();
-    navigate("/login");
+  const handleLogout = async () => {
+    await logout();      // uses context logout
+    navigate("/login");  // redirect after logout
   };
 
   return (
-    <Navbar
-      expand="lg"
-      fixed="top"
-      bg="dark"
-      variant="dark"
-      className="shadow-sm py-2"
-      style={{
-        background: "linear-gradient(90deg, #4c6fff, #6e42d3)",
-        zIndex: 1050,
-      }}
-    >
-      <Container>
+    <Navbar bg="primary" variant="dark" expand="lg" fixed="top" className="shadow-sm py-2">
+      <Container fluid>
         <Navbar.Brand
-          onClick={handleLogoClick}
-          className="fw-bold fs-4"
+          onClick={() => {
+            if (user) {
+              navigate("/home"); // authenticated users go to Home
+            } else {
+              navigate("/"); // unauthenticated users go to landing or login
+            }
+          }}
+          className="fw-bold text-white fs-4"
           style={{ cursor: "pointer" }}
         >
-          <span className="text-white">Digital</span>
-          <span style={{ color: "#e0e0ff" }}>Marketplace</span>
+          MyApp
         </Navbar.Brand>
 
-        <Navbar.Toggle aria-controls="navbar-nav" />
 
-        <Navbar.Collapse id="navbar-nav" className="justify-content-end">
-          <Nav className="align-items-center">
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="ms-auto d-flex align-items-center gap-3">
             {user ? (
-              <NavDropdown
-                align="end"
-                title={user.email || "My Account"}
-                id="user-nav-dropdown"
-              >
-                <NavDropdown.Item onClick={() => navigate("/dashboard")}>
-                  Dashboard
-                </NavDropdown.Item>
-                <NavDropdown.Divider />
-                <NavDropdown.Item onClick={handleLogout}>
+              <>
+                <span className="text-white">
+                  Welcome, <strong>{user?.username || "Guest"}</strong>
+                </span>
+                <Button variant="outline-light" size="sm" onClick={handleLogout}>
                   Logout
-                </NavDropdown.Item>
-              </NavDropdown>
+                </Button>
+              </>
             ) : (
               <>
-                <Button
-                  variant="outline-light"
-                  className="me-2 fw-medium px-3 rounded-pill"
-                  onClick={() => navigate("/login")}
-                >
+                <Button variant="outline-light" size="sm" onClick={() => navigate("/login")}>
                   Login
                 </Button>
-                <Button
-                  variant="light"
-                  className="text-primary fw-bold px-3 rounded-pill"
-                  style={{ boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}
-                  onClick={() => navigate("/signup")}
-                >
+                <Button variant="light" size="sm" onClick={() => navigate("/signup")}>
                   Sign Up
                 </Button>
               </>

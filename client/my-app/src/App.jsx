@@ -13,6 +13,7 @@ import Home from "./pages/Home";
 import { Container } from "react-bootstrap";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -38,54 +39,52 @@ function App() {
     <UserProvider>
       <BrowserRouter>
         <Header />
-        <div style={{ paddingTop: "80px" }}>
-          <Container className="py-4">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Welcome />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/product/:productId" element={<ProductDetails />} />
+        <Container className="py-4">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Welcome />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/product/:productId" element={<ProductDetails />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/home"
-                element={
-                  <ProtectedRoute>
-                    <Home />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/cart"
-                element={
-                  <ProtectedRoute>
-                    <Cart />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/checkout"
-                element={
-                  <ProtectedRoute>
-                    <Checkout />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Protected Routes */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cart"
+              element={
+                <ProtectedRoute>
+                  <Cart />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Catch-all */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Container>
-        </div>
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Container>
       </BrowserRouter>
     </UserProvider>
   );

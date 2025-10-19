@@ -1,12 +1,14 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signIn } from '../../services/auth';
-import { UserContext } from '../../context/UserContext';
+import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { Form, Button, Card, Container, Spinner, Alert } from "react-bootstrap";
+import { signIn } from "../../services/auth";
+import { UserContext } from "../../context/UserContext";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { updateUserAfterLogin } = useContext(UserContext);
@@ -15,55 +17,67 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       await signIn(username, password);
-      const userInfo = await updateUserAfterLogin();
-
-      if (userInfo) {
-        navigate('/home');
-      } else {
-        setError('Unable to load user info after login.');
-      }
+      await updateUserAfterLogin();
+      navigate("/home");
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-      {error && <p className="error-message">{error}</p>}
+    <Container
+      fluid
+      className="d-flex justify-content-center align-items-center vh-100 bg-light px-3"
+    >
+      <Card className="p-4 shadow-lg border-0" style={{ maxWidth: "400px", width: "100%" }}>
+        <h3 className="text-center mb-4 text-primary fw-bold">Login</h3>
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Username</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
+        {error && <Alert variant="danger">{error}</Alert>}
 
-        <div className="form-group">
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3">
+            <Form.Label>Username</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Enter username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </Form.Group>
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-    </div>
+          <Form.Group className="mb-4">
+            <Form.Label>Password</Form.Label>
+            <Form.Control
+              type="password"
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </Form.Group>
+
+          <Button type="submit" variant="primary" className="w-100" disabled={loading}>
+            {loading ? <Spinner animation="border" size="sm" /> : "Login"}
+          </Button>
+
+          <div className="text-center mt-3">
+            <small>
+              Don’t have an account?{" "}
+              <span className="text-primary fw-semibold" role="button" onClick={() => navigate("/signup")}>
+                Sign up
+              </span>
+            </small>
+          </div>
+        </Form>
+      </Card>
+    </Container>
   );
 };
 

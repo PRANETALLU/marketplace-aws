@@ -1,5 +1,5 @@
 import React from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 const Welcome = () => {
@@ -8,49 +8,22 @@ const Welcome = () => {
   return (
     <Container
       fluid
-      className="text-center d-flex align-items-center"
-      style={{
-        background: "linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)",
-        minHeight: "100vh",
-        paddingTop: "120px", // Space for fixed navbar
-        paddingBottom: "60px",
-      }}
+      className="d-flex flex-column justify-content-center align-items-center text-center bg-light vh-100 px-3"
     >
-      <Row className="justify-content-center w-100">
-        <Col lg={8} md={10} className="py-5 px-4 px-md-5">
-          <h1
-            className="display-3 fw-bold mb-4"
-            style={{ color: "#2d3748", letterSpacing: "-0.5px" }}
-          >
-            Welcome to the{" "}
-            <span style={{ color: "#4c6fff" }}>Digital Marketplace</span>
-          </h1>
-          <p className="lead text-secondary fs-5 mb-5">
-            A seamless platform to buy, sell, and trade goods and services
-            worldwide — with secure transactions and a trusted user experience.
-          </p>
-
-          {/* Call-to-Action */}
-          <div className="d-flex justify-content-center gap-3 flex-wrap">
-            <Button
-              variant="primary"
-              size="lg"
-              className="px-4 rounded-pill fw-semibold"
-              onClick={() => navigate("/signup")}
-            >
-              Get Started
-            </Button>
-            <Button
-              variant="outline-primary"
-              size="lg"
-              className="px-4 rounded-pill fw-semibold"
-              onClick={() => navigate("/login")}
-            >
-              Already a user?
-            </Button>
-          </div>
-        </Col>
-      </Row>
+      <div className="p-4 rounded shadow-sm bg-white">
+        <h1 className="fw-bold mb-3 display-5 text-primary">Welcome to MyApp</h1>
+        <p className="text-muted mb-4 fs-5">
+          Experience seamless shopping, smarter dashboards, and a smooth experience.
+        </p>
+        <div className="d-flex flex-wrap gap-3 justify-content-center">
+          <Button variant="primary" size="lg" onClick={() => navigate("/signup")}>
+            Get Started
+          </Button>
+          <Button variant="outline-primary" size="lg" onClick={() => navigate("/login")}>
+            Login
+          </Button>
+        </div>
+      </div>
     </Container>
   );
 };
