@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:staging": "vite build --mode staging",
-    "build:production": "vite build --mode production",
+    "build:staging": "env-cmd -f .env.staging vite build",
+    "build:production": "env-cmd -f .env.production vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
