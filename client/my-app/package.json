@@ -9,7 +9,8 @@
     "build:staging": "env-cmd -f .env.staging vite build",
     "build:production": "env-cmd -f .env.production vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:staging": "env-cmd -f .env.staging vite preview"
   },
   "dependencies": {
     "@aws-amplify/auth": "^6.11.2",
