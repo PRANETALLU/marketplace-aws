@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 const Welcome = () => {
   const navigate = useNavigate();
 
+  const currentStage = import.meta.env.VITE_ENVIRONMENT || "unknown";
+
+
   return (
     <Container
       fluid
@@ -15,6 +18,12 @@ const Welcome = () => {
         <p className="text-muted mb-4 fs-5">
           Experience seamless shopping, smarter dashboards, and a smooth experience.
         </p>
+
+        {/* Print the stage */}
+        <p className="text-info fw-bold mb-4">
+          Current Stage: {currentStage.toUpperCase()}
+        </p>
+
         <div className="d-flex flex-wrap gap-3 justify-content-center">
           <Button variant="primary" size="lg" onClick={() => navigate("/signup")}>
             Get Started
