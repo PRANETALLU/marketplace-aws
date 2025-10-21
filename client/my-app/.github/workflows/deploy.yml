@@ -1,0 +1,57 @@
+name: Build and Deploy React App
+
+# Trigger on pushes to staging or main
+on:
+  push:
+    branches:
+      - staging
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+    # 1️⃣ Checkout the repository
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    # 2️⃣ Set up Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    # 3️⃣ Install dependencies
+    - name: Install dependencies
+      run: npm ci
+
+    # 4️⃣ Build the React app based on branch
+    - name: Build React App
+      run: |
+        if [ "${GITHUB_REF##*/}" = "staging" ]; then
+          npx env-cmd -f .env.staging vite build
+        else
+          npx env-cmd -f .env.production vite build
+        fi
+
+    # 5️⃣ Deploy to S3
+    - name: Deploy to S3
+      uses: aws-actions/s3-sync@v2
+      with:
+        source: "dist/"
+        bucket: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_BUCKET || secrets.PROD_BUCKET }}
+        acl: public-read
+        delete: true
+
+    # 6️⃣ Invalidate CloudFront cache
+    - name: Invalidate CloudFront
+      uses: aws-actions/cloudfront-invalidate@v2
+      with:
+        distribution-id: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DISTRIBUTION_ID || secrets.PROD_DISTRIBUTION_ID }}
+        paths: "/*"
