@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# SAM build artifacts
+.aws-sam/
+build/
+dist/
+
+# Environment files (if they contain sensitive data)
+# env/.local.env
+# env/.test.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Layer node_modules (only needs to be committed if not installed via npm install)
+layers/myLayer/nodejs/node_modules/

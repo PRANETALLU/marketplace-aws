@@ -30,7 +30,6 @@ const ProductDetails = () => {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // fetch product & reviews
   useEffect(() => {
     const fetchProductAndReviews = async () => {
       setLoading(true);
@@ -80,232 +79,668 @@ const ProductDetails = () => {
 
   if (loading) {
     return (
-      <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: "70vh" }}>
-        <Spinner animation="border" variant="primary" />
-      </Container>
+      <div className="product-loading">
+        <Spinner animation="border" style={{ color: '#0d6efd', width: '3rem', height: '3rem' }} />
+      </div>
     );
   }
 
-  if (error) return <Alert variant="danger" className="mt-4">{error}</Alert>;
-  if (!product) return <Alert variant="warning" className="mt-4">Product not found.</Alert>;
+  if (error) {
+    return (
+      <div className="product-loading">
+        <div className="error-state">
+          <div className="error-icon">⚠️</div>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="product-loading">
+        <div className="error-state">
+          <div className="error-icon">🔍</div>
+          <p>Product not found.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Container className="py-5">
-      {/* Product Details Section */}
-      <Row className="g-5 mb-5">
-        {/* Left: Image */}
-        <Col xs={12} lg={6}>
-          <Card className="shadow-sm border-0 overflow-hidden">
-            <Card.Img
-              variant="top"
-              src={product.imageUrl || "https://via.placeholder.com/800x600"}
-              alt={product.productName}
-              style={{ 
-                width: "100%", 
-                height: "auto",
-                maxHeight: "500px",
-                objectFit: "contain",
-                backgroundColor: "#f8f9fa"
-              }}
-            />
-          </Card>
-        </Col>
+    <>
+      <style>{`
+        @keyframes gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
 
-        {/* Right: Details */}
-        <Col xs={12} lg={6}>
-          <div className="h-100 d-flex flex-column">
-            {/* Header */}
-            <div className="mb-4">
-              <div className="d-flex justify-content-between align-items-start mb-3">
-                <h1 className="h2 fw-bold mb-0">{product.productName}</h1>
-                <Badge bg="info" pill className="px-3 py-2 text-uppercase">
-                  {product.category}
-                </Badge>
-              </div>
-              <p className="text-muted fs-6 mb-0">{product.description}</p>
-            </div>
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-            {/* Price & Stock Info */}
-            <div className="mb-4 pb-4 border-bottom">
-              <h2 className="h3 text-primary fw-bold mb-3">${formattedPrice}</h2>
-              <div className="d-flex flex-column gap-2">
-                <p className="mb-0">
-                  <strong>Stock Available:</strong>{" "}
-                  <span className={product.quantity > 10 ? "text-success" : "text-warning"}>
-                    {product.quantity} units
-                  </span>
-                </p>
-                <p className="mb-0 text-muted">
-                  <strong>Seller ID:</strong> {product.sellerId}
-                </p>
-              </div>
-            </div>
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
 
-            {/* Action Buttons */}
-            <div className="mt-auto">
-              <div className="d-flex flex-column flex-sm-row gap-3 mb-3">
-                <Button 
-                  variant="primary" 
-                  size="lg" 
-                  className="flex-grow-1"
-                  disabled={product.quantity === 0}
-                >
-                  Add to Cart
-                </Button>
-                <Button 
-                  variant="success" 
-                  size="lg" 
-                  className="flex-grow-1"
-                  disabled={product.quantity === 0}
-                >
-                  Buy Now
-                </Button>
-              </div>
-              
-              <div className="d-flex flex-column flex-sm-row gap-3">
-                {isOwner && (
-                  <Button 
-                    as={Link} 
-                    to={`/edit-product/${productId}`} 
-                    variant="outline-secondary" 
-                    size="lg"
-                    className="flex-grow-1"
-                  >
-                    Edit Product
-                  </Button>
-                )}
-                {!isOwner && user && (
-                  <Button 
-                    variant="outline-dark" 
-                    size="lg" 
-                    onClick={() => setShowModal(true)}
-                    className="flex-grow-1"
-                  >
-                    Write a Review
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </Col>
-      </Row>
+        .product-details-wrapper {
+          min-height: 100vh;
+          width: 100vw;
+          background: linear-gradient(-45deg, #0d6efd, #0a58ca, #3b82f6, #60a5fa);
+          background-size: 400% 400%;
+          animation: gradient 15s ease infinite;
+          padding: 6rem 0 3rem;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          overflow-y: auto;
+        }
 
-      {/* Reviews Section */}
-      <div className="mt-5 pt-4 border-top">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="h4 fw-bold mb-0">Customer Reviews</h3>
-          <Badge bg="secondary" pill className="px-3 py-2">
-            {reviews.length} {reviews.length === 1 ? "Review" : "Reviews"}
-          </Badge>
-        </div>
+        .product-details-wrapper::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+          background-size: 50px 50px;
+          animation: float 20s ease-in-out infinite;
+          z-index: 0;
+        }
 
-        {reviews.length === 0 ? (
-          <Card className="shadow-sm border-0 text-center py-5">
-            <Card.Body>
-              <div className="text-muted mb-3">
-                <svg 
-                  width="64" 
-                  height="64" 
-                  fill="currentColor" 
-                  className="mb-3" 
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
-                </svg>
+        .product-details-container {
+          position: relative;
+          z-index: 1;
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+        }
+
+        .product-loading {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(-45deg, #0d6efd, #0a58ca, #3b82f6, #60a5fa);
+          background-size: 400% 400%;
+          animation: gradient 15s ease infinite;
+        }
+
+        .error-state {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 24px;
+          padding: 3rem 2rem;
+          text-align: center;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .error-icon {
+          font-size: 4rem;
+          margin-bottom: 1rem;
+        }
+
+        .error-state p {
+          color: #64748b;
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin: 0;
+        }
+
+        .modern-product-card {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          overflow: hidden;
+          animation: fadeInUp 0.6s ease-out;
+        }
+
+        .product-image-section {
+          background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(10, 88, 202, 0.05) 100%);
+          padding: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 500px;
+        }
+
+        .product-image-section img {
+          max-width: 100%;
+          height: auto;
+          max-height: 500px;
+          object-fit: contain;
+          border-radius: 16px;
+          transition: transform 0.3s ease;
+        }
+
+        .product-image-section img:hover {
+          transform: scale(1.02);
+        }
+
+        .product-info-section {
+          padding: 2.5rem;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+
+        .product-header {
+          margin-bottom: 2rem;
+          animation: fadeInUp 0.7s ease-out;
+        }
+
+        .product-name {
+          font-size: 2.5rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin-bottom: 1rem;
+          line-height: 1.2;
+        }
+
+        .product-category-badge {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          color: #0a58ca;
+          border-radius: 12px;
+          padding: 0.5rem 1.5rem;
+          font-weight: 700;
+          display: inline-block;
+          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+          text-transform: uppercase;
+          font-size: 0.85rem;
+        }
+
+        .product-description {
+          color: #64748b;
+          font-size: 1.1rem;
+          line-height: 1.6;
+          margin-top: 1rem;
+        }
+
+        .product-price-section {
+          padding: 1.5rem 0;
+          border-bottom: 2px solid rgba(100, 116, 139, 0.2);
+          margin-bottom: 1.5rem;
+          animation: fadeInUp 0.8s ease-out;
+        }
+
+        .product-price {
+          font-size: 3rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin-bottom: 1rem;
+        }
+
+        .stock-info {
+          color: #64748b;
+          font-size: 1rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .stock-available {
+          font-weight: 700;
+          color: #16a34a;
+        }
+
+        .stock-low {
+          font-weight: 700;
+          color: #ea580c;
+        }
+
+        .modern-action-btn {
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          border: none;
+          border-radius: 12px;
+          padding: 1rem 2rem;
+          font-weight: 700;
+          font-size: 1.1rem;
+          color: white;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 20px rgba(13, 110, 253, 0.4);
+          text-decoration: none;
+          display: inline-block;
+          text-align: center;
+        }
+
+        .modern-action-btn:hover:not(:disabled) {
+          transform: translateY(-3px);
+          box-shadow: 0 12px 30px rgba(13, 110, 253, 0.5);
+          background: linear-gradient(135deg, #0b5ed7 0%, #084298 100%);
+          color: white;
+        }
+
+        .modern-action-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .modern-action-btn.secondary {
+          background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+          box-shadow: 0 8px 20px rgba(22, 163, 74, 0.4);
+        }
+
+        .modern-action-btn.secondary:hover:not(:disabled) {
+          background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+          box-shadow: 0 12px 30px rgba(22, 163, 74, 0.5);
+        }
+
+        .modern-action-btn.outline {
+          background: transparent;
+          border: 2px solid #0d6efd;
+          color: #0d6efd;
+          box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2);
+        }
+
+        .modern-action-btn.outline:hover {
+          background: #0d6efd;
+          color: white;
+          box-shadow: 0 8px 20px rgba(13, 110, 253, 0.4);
+        }
+
+        .reviews-section {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 24px;
+          padding: 2.5rem;
+          margin-top: 2rem;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          animation: fadeInUp 0.9s ease-out;
+        }
+
+        .reviews-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 2rem;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .reviews-title {
+          font-size: 2rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin: 0;
+        }
+
+        .reviews-count-badge {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          color: #0a58ca;
+          border-radius: 12px;
+          padding: 0.5rem 1.5rem;
+          font-weight: 700;
+          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .review-card {
+          background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(10, 88, 202, 0.05) 100%);
+          border: 2px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 1.5rem;
+          margin-bottom: 1rem;
+          transition: all 0.3s ease;
+        }
+
+        .review-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 20px rgba(13, 110, 253, 0.15);
+          border-color: #0d6efd;
+        }
+
+        .review-rating {
+          color: #fbbf24;
+          font-size: 1.5rem;
+          font-weight: 700;
+        }
+
+        .review-date {
+          color: #64748b;
+          font-size: 0.875rem;
+        }
+
+        .review-comment {
+          color: #1e293b;
+          font-size: 1rem;
+          line-height: 1.6;
+          margin: 1rem 0;
+        }
+
+        .review-author {
+          color: #64748b;
+          font-size: 0.875rem;
+        }
+
+        .empty-reviews {
+          text-align: center;
+          padding: 4rem 2rem;
+        }
+
+        .empty-reviews-icon {
+          font-size: 4rem;
+          margin-bottom: 1rem;
+          opacity: 0.5;
+        }
+
+        .empty-reviews-text {
+          color: #64748b;
+          font-size: 1.25rem;
+          font-weight: 600;
+        }
+
+        .modern-modal .modal-content {
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(20px);
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modern-modal .modal-header {
+          border-bottom: 2px solid rgba(100, 116, 139, 0.2);
+          padding: 1.5rem 2rem;
+        }
+
+        .modern-modal .modal-title {
+          font-size: 1.75rem;
+          font-weight: 800;
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .modern-modal .modal-body {
+          padding: 2rem;
+        }
+
+        .modern-modal .modal-footer {
+          border-top: 2px solid rgba(100, 116, 139, 0.2);
+          padding: 1.5rem 2rem;
+        }
+
+        .modern-form-label {
+          font-weight: 600;
+          color: #475569;
+          margin-bottom: 0.5rem;
+          font-size: 1rem;
+        }
+
+        .modern-form-control {
+          border: 2px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 0.75rem 1rem;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          background: white;
+        }
+
+        .modern-form-control:focus {
+          border-color: #0d6efd;
+          box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+          outline: none;
+        }
+
+        @media (max-width: 992px) {
+          .product-name {
+            font-size: 2rem;
+          }
+
+          .product-price {
+            font-size: 2.5rem;
+          }
+
+          .product-info-section {
+            padding: 2rem;
+          }
+
+          .reviews-section {
+            padding: 2rem;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .product-name {
+            font-size: 1.75rem;
+          }
+
+          .product-image-section {
+            min-height: 300px;
+            padding: 1.5rem;
+          }
+
+          .product-info-section {
+            padding: 1.5rem;
+          }
+
+          .reviews-section {
+            padding: 1.5rem;
+          }
+        }
+      `}</style>
+
+      <div className="product-details-wrapper">
+        <div className="product-details-container">
+          {/* Product Details Section */}
+          <Row className="g-4 mb-4">
+            {/* Left: Image */}
+            <Col xs={12} lg={6}>
+              <div className="modern-product-card">
+                <div className="product-image-section">
+                  <img
+                    src={product.imageUrl || "https://via.placeholder.com/800x600"}
+                    alt={product.productName}
+                  />
+                </div>
               </div>
-              <h5 className="text-muted">No reviews yet</h5>
-              <p className="text-muted mb-0">Be the first to review this product!</p>
-            </Card.Body>
-          </Card>
-        ) : (
-          <div className="d-flex flex-column gap-3">
-            {reviews.map((review, idx) => (
-              <Card 
-                key={review.reviewId || `${productId}-rev-${idx}`} 
-                className="shadow-sm border-0"
-              >
-                <Card.Body className="p-4">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="d-flex align-items-center gap-2">
-                      <div className="text-warning fs-5 fw-bold">
-                        {"★".repeat(review.rating)}
-                        <span className="text-muted">{"☆".repeat(5 - review.rating)}</span>
-                      </div>
-                      <span className="text-muted">({review.rating}/5)</span>
+            </Col>
+
+            {/* Right: Details */}
+            <Col xs={12} lg={6}>
+              <div className="modern-product-card">
+                <div className="product-info-section">
+                  {/* Header */}
+                  <div className="product-header">
+                    <h1 className="product-name">{product.productName}</h1>
+                    <span className="product-category-badge">{product.category}</span>
+                    <p className="product-description">{product.description}</p>
+                  </div>
+
+                  {/* Price & Stock Info */}
+                  <div className="product-price-section">
+                    <div className="product-price">${formattedPrice}</div>
+                    <div className="stock-info">
+                      <strong>Stock Available:</strong>{" "}
+                      <span className={product.quantity > 10 ? "stock-available" : "stock-low"}>
+                        {product.quantity} units
+                      </span>
                     </div>
-                    {review.createdAt && (
-                      <small className="text-muted">
-                        {new Date(review.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric"
-                        })}
-                      </small>
+                    <div className="stock-info">
+                      <strong>Seller ID:</strong> {product.sellerId}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-auto">
+                    <div className="d-flex flex-column flex-sm-row gap-3 mb-3">
+                      <button 
+                        className="modern-action-btn flex-grow-1"
+                        disabled={product.quantity === 0}
+                      >
+                        Add to Cart
+                      </button>
+                      <button 
+                        className="modern-action-btn secondary flex-grow-1"
+                        disabled={product.quantity === 0}
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                    
+                    <div className="d-flex flex-column flex-sm-row gap-3">
+                      {isOwner && (
+                        <Link 
+                          to={`/edit-product/${productId}`} 
+                          className="modern-action-btn outline flex-grow-1"
+                        >
+                          Edit Product
+                        </Link>
+                      )}
+                      {!isOwner && user && (
+                        <button 
+                          className="modern-action-btn outline flex-grow-1"
+                          onClick={() => setShowModal(true)}
+                        >
+                          Write a Review
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Reviews Section */}
+          <div className="reviews-section">
+            <div className="reviews-header">
+              <h3 className="reviews-title">Customer Reviews</h3>
+              <span className="reviews-count-badge">
+                {reviews.length} {reviews.length === 1 ? "Review" : "Reviews"}
+              </span>
+            </div>
+
+            {reviews.length === 0 ? (
+              <div className="empty-reviews">
+                <div className="empty-reviews-icon">⭐</div>
+                <h5 className="empty-reviews-text">No reviews yet</h5>
+                <p className="text-muted">Be the first to review this product!</p>
+              </div>
+            ) : (
+              <div className="d-flex flex-column">
+                {reviews.map((review, idx) => (
+                  <div 
+                    key={review.reviewId || `${productId}-rev-${idx}`} 
+                    className="review-card"
+                  >
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="review-rating">
+                          {"★".repeat(review.rating)}
+                          <span style={{ color: '#cbd5e1' }}>{"☆".repeat(5 - review.rating)}</span>
+                        </div>
+                        <span className="text-muted">({review.rating}/5)</span>
+                      </div>
+                      {review.createdAt && (
+                        <small className="review-date">
+                          {new Date(review.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric"
+                          })}
+                        </small>
+                      )}
+                    </div>
+                    
+                    {review.comment && (
+                      <p className="review-comment">{review.comment}</p>
+                    )}
+                    
+                    {review.buyerId && (
+                      <p className="review-author mb-0">
+                        Reviewed by <strong>{review.buyerId}</strong>
+                      </p>
                     )}
                   </div>
-                  
-                  {review.comment && (
-                    <Card.Text className="mb-3">
-                      {review.comment}
-                    </Card.Text>
-                  )}
-                  
-                  {review.buyerId && (
-                    <Card.Subtitle className="text-muted small">
-                      Reviewed by <strong>{review.buyerId}</strong>
-                    </Card.Subtitle>
-                  )}
-                </Card.Body>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Review Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Write a Review</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="reviewRating" className="mb-3">
-              <Form.Label className="fw-semibold">Rating</Form.Label>
-              <Form.Select 
-                value={rating} 
-                onChange={(e) => setRating(Number(e.target.value))}
-                className="form-select-lg"
-              >
-                {[5, 4, 3, 2, 1].map((r) => (
-                  <option key={r} value={r}>
-                    {"★".repeat(r)}{"☆".repeat(5 - r)} ({r} Star{r > 1 ? "s" : ""})
-                  </option>
                 ))}
-              </Form.Select>
-            </Form.Group>
+              </div>
+            )}
+          </div>
 
-            <Form.Group controlId="reviewComment">
-              <Form.Label className="fw-semibold">Your Review (optional)</Form.Label>
-              <Form.Control 
-                as="textarea" 
-                rows={4} 
-                value={comment} 
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your thoughts about this product..."
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleReviewSubmit} disabled={submitting}>
-            {submitting ? "Submitting..." : "Submit Review"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+          {/* Review Modal */}
+          <Modal 
+            show={showModal} 
+            onHide={() => setShowModal(false)} 
+            centered
+            className="modern-modal"
+          >
+            <Modal.Header closeButton>
+              <Modal.Title>Write a Review</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Form>
+                <Form.Group controlId="reviewRating" className="mb-3">
+                  <Form.Label className="modern-form-label">Rating</Form.Label>
+                  <Form.Select 
+                    value={rating} 
+                    onChange={(e) => setRating(Number(e.target.value))}
+                    className="modern-form-control"
+                  >
+                    {[5, 4, 3, 2, 1].map((r) => (
+                      <option key={r} value={r}>
+                        {"★".repeat(r)}{"☆".repeat(5 - r)} ({r} Star{r > 1 ? "s" : ""})
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+
+                <Form.Group controlId="reviewComment">
+                  <Form.Label className="modern-form-label">Your Review (optional)</Form.Label>
+                  <Form.Control 
+                    as="textarea" 
+                    rows={4} 
+                    value={comment} 
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Share your thoughts about this product..."
+                    className="modern-form-control"
+                  />
+                </Form.Group>
+              </Form>
+            </Modal.Body>
+            <Modal.Footer>
+              <button 
+                className="modern-action-btn outline" 
+                onClick={() => setShowModal(false)}
+                style={{ padding: '0.75rem 1.5rem' }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modern-action-btn" 
+                onClick={handleReviewSubmit} 
+                disabled={submitting}
+                style={{ padding: '0.75rem 1.5rem' }}
+              >
+                {submitting ? "Submitting..." : "Submit Review"}
+              </button>
+            </Modal.Footer>
+          </Modal>
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -1,5 +1,9 @@
 {
-  "dependencies": {
-    "aws-sdk": "^2.1692.0"
+  "name": "marketplace-create-review-for-product",
+  "version": "1.0.0",
+  "description": "Create a review for a product",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

@@ -1,31 +1,50 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
 
-const response = (status, body) => ({
-  statusCode: status,
-  body: JSON.stringify(body),
-});
-
 exports.handler = async (event) => {
+  console.log("Full Event", event);
+
   try {
     const productId = event.pathParameters?.productId;
+
     if (!productId) {
-      return response(400, { message: "`productId` path parameter is required." });
+      return {
+        statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Credentials": "true",
+        },
+        body: JSON.stringify({ message: "`productId` path parameter is required." }),
+      };
     }
 
-    // Scan Reviews table for reviews matching productId
-    const result = await db.scan({
-      TableName: "ReviewsTable",
-      FilterExpression: "productId = :pid",
-      ExpressionAttributeValues: {
-        ":pid": productId,
+    const result = await db
+      .scan({
+        TableName: "ReviewsTable",
+        FilterExpression: "productId = :pid",
+        ExpressionAttributeValues: {
+          ":pid": productId,
+        },
+      })
+      .promise();
+
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": "true",
       },
-    }).promise();
-
-    return response(200, result.Items || []);
-
+      body: JSON.stringify(result.Items || []),
+    };
   } catch (err) {
     console.error("Error fetching product reviews:", err);
-    return response(500, { message: "Internal server error." });
+    return {
+      statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": "true",
+      },
+      body: JSON.stringify({ message: "Internal server error." }),
+    };
   }
 };

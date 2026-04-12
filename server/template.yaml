@@ -1,0 +1,507 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Marketplace API — API Gateway (REST) + Lambda + DynamoDB (SAM)
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    AllowedValues:
+      - staging
+      - production
+    Description: Deployment target; drives DynamoDB table names and API stage (staging | prod).
+  CognitoUserPoolArn:
+    Type: String
+    Description: ARN of the Cognito User Pool used to validate Authorization JWTs (use a pool per env or the same pool).
+  StripeSecretKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Stripe secret key for checkout Lambdas (use test key for staging, live for production).
+
+Mappings:
+  EnvironmentConfig:
+    staging:
+      ApiStage: staging
+    production:
+      ApiStage: prod
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+    Timeout: 29
+    MemorySize: 256
+    Layers:
+      - !Ref SharedDependenciesLayer
+    Environment:
+      Variables:
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+        ENVIRONMENT_NAME: !Ref EnvironmentName
+        PRODUCTS_TABLE: !Ref ProductsTable
+        CARTS_TABLE: !Ref CartsTable
+        ORDERS_TABLE: !Ref OrdersTable
+        REVIEWS_TABLE: !Ref ReviewsTable
+        TRANSACTIONS_TABLE: !Ref TransactionsTable
+
+Resources:
+  # --- Lambda Layer for Shared Dependencies ---
+  SharedDependenciesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub ${AWS::StackName}-shared-dependencies
+      Description: Shared Node.js dependencies for all Lambda functions
+      ContentUri: layers/myLayer/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Delete
+  # --- DynamoDB (physical names are unique per environment in the same account) ---
+  ProductsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub marketplace-${EnvironmentName}-products
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: productId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: productId
+          KeyType: HASH
+
+  CartsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub marketplace-${EnvironmentName}-carts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub marketplace-${EnvironmentName}-orders
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+
+  ReviewsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub marketplace-${EnvironmentName}-reviews
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: reviewId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: reviewId
+          KeyType: HASH
+
+  TransactionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub marketplace-${EnvironmentName}-transactions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: transactionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: transactionId
+          KeyType: HASH
+
+  MarketplaceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${AWS::StackName}-api
+      StageName: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, ApiStage]
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
+
+  # --- Products ---
+  GetProductsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/products/getProducts/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /products
+            Method: GET
+            Auth:
+              Authorizer: NONE
+
+  GetProductsBySellerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/products/getProductsBySeller/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /products/seller
+            Method: GET
+
+  GetProductByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/products/getProductById/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /products/{productId}
+            Method: GET
+
+  CreateProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/products/createProduct/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /products
+            Method: POST
+
+  UpdateProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/products/updateProduct/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /products/{productId}
+            Method: PUT
+
+  DeleteProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/products/deleteProduct/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /products/{productId}
+            Method: DELETE
+
+  # --- Orders ---
+  PlaceOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/orders/placeOrder/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /orders
+            Method: POST
+
+  GetOrdersPlacedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/orders/getOrdersPlaced/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /orders
+            Method: GET
+
+  GetOrdersReceivedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/orders/getOrdersReceived/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /orders/received
+            Method: GET
+
+  UpdateOrderStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/orders/updateOrderStatus/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /orders/{id}
+            Method: PUT
+
+  # --- Cart ---
+  GetCartItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/carts/getCartItems/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CartsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /cart
+            Method: GET
+
+  AddToCartFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/carts/addToCart/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CartsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /cart
+            Method: POST
+
+  UpdateCartItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/carts/updateCartItem/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CartsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /cart/{productId}
+            Method: PUT
+
+  RemoveCartItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/carts/removeCartItem/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CartsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /cart/{productId}
+            Method: DELETE
+
+  # --- Reviews (literal /reviews/me before /reviews/{productId}) ---
+  GetMyReviewsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/reviews/getMyReviews/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ReviewsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /reviews/me
+            Method: GET
+
+  GetReviewsForProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/reviews/getReviewsForProduct/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ReviewsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /reviews/{productId}
+            Method: GET
+            Auth:
+              Authorizer: NONE
+
+  CreateReviewForProductFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/reviews/createReviewForProduct/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReviewsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /reviews/{productId}
+            Method: POST
+
+  # --- Transactions ---
+  GetUserTransactionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/transactions/getUserTransactions/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TransactionsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /transactions
+            Method: GET
+
+  GetTransactionByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/transactions/getTransactionById/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TransactionsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /transactions/{transactionId}
+            Method: GET
+
+  # --- Payments (Stripe) ---
+  CheckoutCartItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/payments/checkoutCartItems/
+      Handler: index.handler
+      Environment:
+        Variables:
+          STRIPE_SECRET_KEY: !Ref StripeSecretKey
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /payments/checkout-cart
+            Method: POST
+            Auth:
+              Authorizer: NONE
+
+  CheckoutSingleItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/payments/checkoutSingleItem/
+      Handler: index.handler
+      Environment:
+        Variables:
+          STRIPE_SECRET_KEY: !Ref StripeSecretKey
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ProductsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /payments/checkout-single
+            Method: POST
+            Auth:
+              Authorizer: NONE
+
+Outputs:
+  EnvironmentName:
+    Description: Stack environment
+    Value: !Ref EnvironmentName
+  ApiEndpoint:
+    Description: Base URL for VITE_API_URL for this environment
+    Value: !Sub
+      - https://${ApiId}.execute-api.${AWS::Region}.amazonaws.com/${StageName}
+      - ApiId: !Ref MarketplaceApi
+        StageName: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, ApiStage]
+  ProductsTableName:
+    Value: !Ref ProductsTable
+  CognitoAuthorizerNote:
+    Description: API uses Cognito JWT authorizer; unauthenticated routes are GET /products and GET /reviews/{productId}.

@@ -1,5 +1,9 @@
 {
-  "dependencies": {
-    "aws-sdk": "^2.1692.0"
+  "name": "marketplace-remove-cart-item",
+  "version": "1.0.0",
+  "description": "Remove an item from the cart",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

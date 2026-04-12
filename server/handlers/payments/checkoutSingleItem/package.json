@@ -1,7 +1,7 @@
 {
-  "name": "marketplace-delete-product",
+  "name": "marketplace-checkout-single-item",
   "version": "1.0.0",
-  "description": "Delete a product",
+  "description": "Checkout a single item with Stripe",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

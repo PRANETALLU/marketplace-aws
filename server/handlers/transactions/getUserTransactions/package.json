@@ -1,5 +1,9 @@
 {
-  "dependencies": {
-    "aws-sdk": "^2.1692.0"
+  "name": "marketplace-get-user-transactions",
+  "version": "1.0.0",
+  "description": "Get user transactions",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

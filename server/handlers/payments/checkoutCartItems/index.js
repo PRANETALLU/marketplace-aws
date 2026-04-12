@@ -1,6 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
 
 exports.handler = async (event) => {
   try {
@@ -11,8 +12,8 @@ exports.handler = async (event) => {
 
     for (const item of cartItems) {
       const productResult = await db.get({
-        TableName: "ProductsTable",
-        Key: { id: item.productId },
+        TableName: PRODUCTS_TABLE,
+        Key: { productId: item.productId },
       }).promise();
 
       const product = productResult.Item;
@@ -23,7 +24,7 @@ exports.handler = async (event) => {
           currency: "usd",
           unit_amount: Math.round(product.price * 100),
           product_data: {
-            name: product.title,
+            name: product.productName || product.title,
             description: product.description,
           },
         },

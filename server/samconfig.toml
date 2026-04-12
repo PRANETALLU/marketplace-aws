@@ -1,0 +1,46 @@
+# Deploy: sam deploy --config-env staging   OR   sam deploy --config-env production
+# Edit parameter_overrides below with real Cognito pool ARNs (add StripeSecretKey=... when ready).
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "marketplace-api-staging"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-east-1"
+parameter_overrides = "EnvironmentName=staging CognitoUserPoolArn=arn:aws:cognito-idp:REGION:ACCOUNT:userpool/STAGING_POOL_ID"
+
+[staging.global.parameters]
+stack_name = "marketplace-api-staging"
+
+[staging.build.parameters]
+cached = true
+parallel = true
+
+[staging.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-east-1"
+parameter_overrides = "EnvironmentName=staging CognitoUserPoolArn=arn:aws:cognito-idp:REGION:ACCOUNT:userpool/STAGING_POOL_ID"
+
+[production.global.parameters]
+stack_name = "marketplace-api-production"
+
+[production.build.parameters]
+cached = true
+parallel = true
+
+[production.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-east-1"
+parameter_overrides = "EnvironmentName=production CognitoUserPoolArn=arn:aws:cognito-idp:REGION:ACCOUNT:userpool/PRODUCTION_POOL_ID"
