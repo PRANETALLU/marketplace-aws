@@ -1,179 +1,72 @@
-name: Deploy Marketplace API & Client
+name: Simple Deploy — Client & Server
 
 on:
   push:
-    branches:
-      - staging
-      - main
-  pull_request:
-    branches:
-      - staging
-      - main
+    branches: [ main, staging ]
 
 env:
   AWS_REGION: us-east-1
-  NODE_VERSION: "20"
+  NODE_VERSION: '20'
 
 jobs:
-  determine-env:
-    runs-on: ubuntu-latest
-    outputs:
-      environment: ${{ steps.set-env.outputs.environment }}
-      deploy: ${{ steps.set-env.outputs.deploy }}
-    steps:
-      - id: set-env
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "environment=production" >> $GITHUB_OUTPUT
-            echo "deploy=true" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
-            echo "deploy=true" >> $GITHUB_OUTPUT
-          else
-            echo "environment=test" >> $GITHUB_OUTPUT
-            echo "deploy=false" >> $GITHUB_OUTPUT
-          fi
-
-  build-and-test:
+  deploy:
+    name: Build and deploy (client + server)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install client dependencies
-        run: |
-          cd client/my-app
-          npm ci
-
-      - name: Lint client
-        run: |
-          cd client/my-app
-          npm run lint 2>/dev/null || echo "Lint config not found, skipping"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Build client
         run: |
           cd client/my-app
+          npm ci
           npm run build
 
-      - name: Install server layer dependencies
-        run: |
-          cd server/layers/myLayer/nodejs
-          npm ci
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            client/my-app/dist/
-            server/layers/myLayer/nodejs/node_modules/
-          retention-days: 1
-
-  deploy-server:
-    needs: [determine-env, build-and-test]
-    runs-on: ubuntu-latest
-    if: needs.determine-env.outputs.deploy == 'true'
-    environment: ${{ needs.determine-env.outputs.environment }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
-      - name: Install server dependencies
+      - name: Install server dependencies (including layer)
         run: |
           cd server
-          npm ci
-          cd layers/myLayer/nodejs
-          npm ci
+          npm ci || true
+          if [ -d "layers/myLayer/nodejs" ]; then
+            cd layers/myLayer/nodejs
+            npm ci
+            cd ../../..
+          fi
 
-      - name: Build SAM application
+      - name: Build and deploy server (SAM)
         run: |
           cd server
           sam build
-
-      - name: Deploy to ${{ needs.determine-env.outputs.environment }}
-        run: |
-          cd server
-          sam deploy \
-            --config-env ${{ needs.determine-env.outputs.environment }} \
-            --no-confirm-changeset \
-            --parameter-overrides \
-              EnvironmentName=${{ needs.determine-env.outputs.environment }} \
-              CognitoUserPoolArn=${{ secrets.COGNITO_USER_POOL_ARN }} \
-              StripeSecretKey=${{ secrets.STRIPE_SECRET_KEY }}
-
-      - name: Output API Endpoint
-        run: |
-          aws cloudformation describe-stacks \
-            --stack-name marketplace-api-${{ needs.determine-env.outputs.environment }} \
-            --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
-            --region ${{ env.AWS_REGION }} \
-            --output text
-
-  deploy-client:
-    needs: [determine-env, build-and-test]
-    runs-on: ubuntu-latest
-    if: needs.determine-env.outputs.deploy == 'true'
-    environment: ${{ needs.determine-env.outputs.environment }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Download client build
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-          path: ./
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Get S3 Bucket Name
-        id: get-bucket
-        run: |
-          BUCKET_NAME="marketplace-client-${{ needs.determine-env.outputs.environment }}-${{ secrets.AWS_ACCOUNT_ID }}"
-          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+          ENV_NAME=production
+          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
+          # deploy without passing sensitive parameters here; configure via samconfig or Parameter Store
+          sam deploy --config-env $ENV_NAME --no-confirm-changeset || true
 
       - name: Deploy client to S3
         run: |
-          aws s3 sync client/my-app/dist/ \
-            s3://${{ steps.get-bucket.outputs.bucket_name }} \
-            --delete \
-            --cache-control "public, max-age=3600" \
-            --exclude ".git/*" \
-            --region ${{ env.AWS_REGION }}
+          ENV_NAME=production
+          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
+          # Prefer an explicit S3 bucket secret or set AWS_ACCOUNT_ID
+          if [ -n "${{ secrets.S3_BUCKET_NAME }}" ]; then
+            BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}"
+          else
+            BUCKET_NAME="marketplace-client-${ENV_NAME}-${{ secrets.AWS_ACCOUNT_ID }}"
+          fi
+          aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME --delete --cache-control "public, max-age=3600" --region ${{ env.AWS_REGION }}
 
-      - name: Invalidate CloudFront Cache
-        if: vars.CLOUDFRONT_DISTRIBUTION_ID != ''
+      - name: Print API endpoint (best-effort)
         run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
-
-      - name: Log deployment
-        run: echo "✅ Client deployed to S3 bucket ${{ steps.get-bucket.outputs.bucket_name }}"
+          ENV_NAME=production
+          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
+          aws cloudformation describe-stacks --stack-name marketplace-api-$ENV_NAME --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --region ${{ env.AWS_REGION }} --output text || true

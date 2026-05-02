@@ -137,7 +137,21 @@ It supports features like product listings, reviews, payments, and order managem
 
 ---
 
-## 📈 Why This Project Stands Out
+## 🚢 Simple Deploy
+
+- **GitHub Actions:** Pushes to `main` or `staging` trigger the simplified workflow at [.github/workflows/deploy.yml](.github/workflows/deploy.yml).
+- **Local deploy script:** You can deploy locally with `./scripts/deploy.sh staging` or `./scripts/deploy.sh production` (requires AWS CLI, SAM CLI, and AWS credentials configured; set `AWS_ACCOUNT_ID` in your environment for S3 bucket naming).
+ - **Local deploy script:** You can deploy locally with `./scripts/deploy.sh staging` or `./scripts/deploy.sh production` (requires AWS CLI, SAM CLI, and AWS credentials configured).
+
+Required secrets / env vars for CI or local deploys (minimal):
+
+- **AWS_ACCESS_KEY_ID** and **AWS_SECRET_ACCESS_KEY**: AWS credentials for deployment (store as repository secrets).
+- **AWS_ACCOUNT_ID** or **S3_BUCKET_NAME**: either provide account id (workflow constructs bucket name) or an explicit `S3_BUCKET_NAME` secret to target the S3 bucket.
+- **AWS_REGION** (not secret): set in workflow or environment; default is `us-east-1`.
+
+Notes:
+- Cognito or Stripe secrets are NOT required by the workflow — supply them to SAM via `samconfig.toml`, Parameter Store, or another secure mechanism if needed.
+
 - Full AWS stack – cloud-native development experience  
 - Serverless architecture – scalable and cost-efficient  
 - Dual-role user logic – demonstrates complex business rules  
