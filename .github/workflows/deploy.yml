@@ -40,14 +40,28 @@ jobs:
           # Install dependencies for any Node.js Lambda layers
           for layer_dir in layers/*/nodejs; do
             if [ -d "$layer_dir" ]; then
-              (cd "$layer_dir" && npm ci)
+              (
+                cd "$layer_dir"
+                if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+                  npm ci
+                else
+                  npm install --no-audit --no-fund
+                fi
+              )
             fi
           done
 
           # Install dependencies for each function handler that has a package.json
           for handler in handlers/*/*; do
             if [ -f "$handler/package.json" ]; then
-              (cd "$handler" && npm ci)
+              (
+                cd "$handler"
+                if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+                  npm ci
+                else
+                  npm install --no-audit --no-fund
+                fi
+              )
             fi
           done
 
