@@ -34,15 +34,22 @@ jobs:
           npm ci
           npm run build
 
-      - name: Install server dependencies (including layer)
+      - name: Install server handlers and layers dependencies
         run: |
           cd server
-          npm ci || true
-          if [ -d "layers/myLayer/nodejs" ]; then
-            cd layers/myLayer/nodejs
-            npm ci
-            cd ../../..
-          fi
+          # Install dependencies for any Node.js Lambda layers
+          for layer_dir in layers/*/nodejs; do
+            if [ -d "$layer_dir" ]; then
+              (cd "$layer_dir" && npm ci)
+            fi
+          done
+
+          # Install dependencies for each function handler that has a package.json
+          for handler in handlers/*/*; do
+            if [ -f "$handler/package.json" ]; then
+              (cd "$handler" && npm ci)
+            fi
+          done
 
       - name: Build and deploy server (SAM)
         run: |
