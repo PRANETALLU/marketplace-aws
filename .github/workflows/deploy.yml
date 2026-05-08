@@ -86,7 +86,7 @@ jobs:
 
           aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME \
             --delete \
-            --cache-control "public, max-age=3600" \ 
+            --cache-control "public, max-age=3600" \
             --region ${{ env.AWS_REGION }}
 
       - name: Print API endpoint (best-effort)
