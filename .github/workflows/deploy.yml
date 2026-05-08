@@ -77,14 +77,16 @@ jobs:
       - name: Deploy client to S3
         run: |
           ENV_NAME=production
-          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
-          # Prefer an explicit S3 bucket secret or set AWS_ACCOUNT_ID
-          if [ -n "${{ secrets.S3_BUCKET_NAME }}" ]; then
-            BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}"
-          else
-            BUCKET_NAME="marketplace-client-${ENV_NAME}-${{ secrets.AWS_ACCOUNT_ID }}"
+
+          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then
+            ENV_NAME=staging
           fi
-          aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME --delete --cache-control "public, max-age=3600" --region ${{ env.AWS_REGION }}
+
+          BUCKET_NAME="marketplace-client-${ENV_NAME}-${{ secrets.AWS_ACCOUNT_ID }}"
+
+          aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME \
+            --delete \
+            --cache-control "public, max-age=3600"--region ${{ env.AWS_REGION }}
 
       - name: Print API endpoint (best-effort)
         run: |
