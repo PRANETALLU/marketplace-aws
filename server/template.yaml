@@ -495,13 +495,34 @@ Outputs:
   EnvironmentName:
     Description: Stack environment
     Value: !Ref EnvironmentName
+
   ApiEndpoint:
     Description: Base URL for VITE_API_URL for this environment
     Value: !Sub
       - https://${ApiId}.execute-api.${AWS::Region}.amazonaws.com/${StageName}
       - ApiId: !Ref MarketplaceApi
         StageName: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, ApiStage]
+
   ProductsTableName:
+    Description: Products DynamoDB table
     Value: !Ref ProductsTable
+
+  CartsTableName:
+    Description: Carts DynamoDB table
+    Value: !Ref CartsTable
+
+  OrdersTableName:
+    Description: Orders DynamoDB table
+    Value: !Ref OrdersTable
+
+  ReviewsTableName:
+    Description: Reviews DynamoDB table
+    Value: !Ref ReviewsTable
+
+  TransactionsTableName:
+    Description: Transactions DynamoDB table
+    Value: !Ref TransactionsTable
+
   CognitoAuthorizerNote:
-    Description: API uses Cognito JWT authorizer; unauthenticated routes are GET /products and GET /reviews/{productId}.
+    Description: Cognito authorizer configuration note
+    Value: "Authenticated by Cognito except GET /products and GET /reviews/{productId}"
