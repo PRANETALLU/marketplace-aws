@@ -82,12 +82,12 @@ jobs:
             ENV_NAME=staging
           fi
 
-          BUCKET_NAME="marketplace-client-${ENV_NAME}-${{ secrets.AWS_ACCOUNT_ID }}"
+          BUCKET_NAME="marketplace-${ENV_NAME}-123"
 
-          aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME \
-            --delete \
-            --cache-control "public, max-age=3600" \
-            --region ${{ env.AWS_REGION }}
+        aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME \
+          --delete \
+          --cache-control "public, max-age=3600" \
+          --region ${{ env.AWS_REGION }}
 
       - name: Print API endpoint (best-effort)
         run: |
