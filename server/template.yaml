@@ -127,6 +127,8 @@ Resources:
         AllowOrigin: "'*'"
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !Ref CognitoUserPoolArn
@@ -147,8 +149,6 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /products
             Method: GET
-            Auth:
-              Authorizer: NONE
 
   GetProductsBySellerFunction:
     Type: AWS::Serverless::Function
@@ -394,8 +394,6 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /reviews/{productId}
             Method: GET
-            Auth:
-              Authorizer: NONE
 
   CreateReviewForProductFunction:
     Type: AWS::Serverless::Function
@@ -467,8 +465,6 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /payments/checkout-cart
             Method: POST
-            Auth:
-              Authorizer: NONE
 
   CheckoutSingleItemFunction:
     Type: AWS::Serverless::Function
@@ -488,8 +484,6 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /payments/checkout-single
             Method: POST
-            Auth:
-              Authorizer: NONE
 
 Outputs:
   EnvironmentName:
