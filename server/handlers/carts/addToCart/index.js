@@ -1,16 +1,24 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
+};
+
 exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: corsHeaders, body: "" };
+  }
+
   const claims = event.requestContext.authorizer?.claims;
   const userId = claims?.sub;
   if (!userId) {
     return {
       statusCode: 401,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ message: "Unauthorized" }),
     };
   }
@@ -20,10 +28,7 @@ exports.handler = async (event) => {
   if (!productId || !quantity || quantity < 1) {
     return {
       statusCode: 400,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ message: "productId and quantity (>=1) are required" }),
     };
   }
@@ -69,20 +74,14 @@ exports.handler = async (event) => {
 
     return {
       statusCode: cart.createdAt === cart.updatedAt ? 201 : 200, // 201 if new cart, else 200
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true
-      },
+      headers: corsHeaders,
       body: JSON.stringify(cart),
     };
   } catch (error) {
     console.error("Add to cart error:", error);
     return {
       statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ message: "Internal server error" }),
     };
   }

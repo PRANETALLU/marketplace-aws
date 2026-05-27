@@ -1,16 +1,24 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  "Access-Control-Allow-Methods": "DELETE,OPTIONS",
+};
+
 const res = (code, body, isEmpty = false) => ({
   statusCode: code,
-  headers: {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Credentials": true,
-  },
+  headers: corsHeaders,
   body: isEmpty ? "" : JSON.stringify(body),
 });
 
 exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: corsHeaders, body: "" };
+  }
+
   try {
     const userId = event.requestContext?.authorizer?.claims?.sub;
     if (!userId) return res(401, { message: "Unauthorized" });

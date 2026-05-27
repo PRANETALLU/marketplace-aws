@@ -3,7 +3,23 @@ const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
+};
+
+const response = (statusCode, body) => ({
+  statusCode,
+  headers: corsHeaders,
+  body: JSON.stringify(body),
+});
+
 exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: corsHeaders, body: "" };
+  }
+
   try {
     const { cartItems } = JSON.parse(event.body);
     // cartItems = [{ productId: "abc123", quantity: 2 }, ...]
@@ -33,10 +49,7 @@ exports.handler = async (event) => {
     }
 
     if (line_items.length === 0) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "No valid products found" }),
-      };
+      return response(400, { error: "No valid products found" });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -47,15 +60,9 @@ exports.handler = async (event) => {
       cancel_url: "https://yourdomain.com/cancel",
     });
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ url: session.url }),
-    };
+    return response(200, { url: session.url });
   } catch (err) {
     console.error("Stripe error:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Stripe session creation failed" }),
-    };
+    return response(500, { error: "Stripe session creation failed" });
   }
 };
