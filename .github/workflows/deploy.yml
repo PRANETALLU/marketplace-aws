@@ -72,7 +72,7 @@ jobs:
           ENV_NAME=production
           if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
           # deploy without passing sensitive parameters here; configure via samconfig or Parameter Store
-          sam deploy --config-env $ENV_NAME --no-confirm-changeset || true
+          sam deploy --config-env $ENV_NAME --no-confirm-changeset
 
       - name: Deploy client to S3
         run: |
