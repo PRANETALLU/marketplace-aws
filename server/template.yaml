@@ -133,6 +133,26 @@ Resources:
           CognitoAuthorizer:
             UserPoolArn: !Ref CognitoUserPoolArn
 
+  Default4xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref MarketplaceApi
+      ResponseType: DEFAULT_4XX
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+
+  Default5xxGatewayResponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref MarketplaceApi
+      ResponseType: DEFAULT_5XX
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+
   # --- Products ---
   GetProductsFunction:
     Type: AWS::Serverless::Function
@@ -149,6 +169,8 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /products
             Method: GET
+            Auth:
+              Authorizer: NONE
 
   GetProductsBySellerFunction:
     Type: AWS::Serverless::Function

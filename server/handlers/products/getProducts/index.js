@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,7 +36,7 @@ exports.handler = async (event) => {
 
   try {
     const result = await db.scan({
-      TableName: "ProductsTable",
+      TableName: PRODUCTS_TABLE,
       FilterExpression: "#status = :available",
       ExpressionAttributeNames: {
         "#status": "status"

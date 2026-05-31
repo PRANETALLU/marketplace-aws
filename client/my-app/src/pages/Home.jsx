@@ -12,7 +12,7 @@ const Home = () => {
     const fetchProducts = async () => {
       try {
         const data = await getProducts();
-        setProducts(JSON.parse(data.body));
+        setProducts(data);
       } catch (error) {
         console.error("Error fetching products", error);
       }
