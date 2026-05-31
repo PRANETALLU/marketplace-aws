@@ -13,8 +13,21 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      getProductsBySeller().then(setProducts);
-      getOrdersPlaced().then(setOrders);
+      const fetchDashboardData = async () => {
+        try {
+          const [sellerProducts, placedOrders] = await Promise.all([
+            getProductsBySeller(),
+            getOrdersPlaced(),
+          ]);
+
+          setProducts(sellerProducts);
+          setOrders(placedOrders);
+        } catch (error) {
+          console.error("Error fetching dashboard data", error);
+        }
+      };
+
+      fetchDashboardData();
     }
   }, [user, loading]);
 
