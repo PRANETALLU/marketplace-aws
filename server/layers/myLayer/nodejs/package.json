@@ -4,7 +4,7 @@
   "description": "Shared dependencies for all Lambda functions in the Marketplace API",
   "main": "index.js",
   "dependencies": {
-    "aws-sdk": "^1.18.0",
+    "aws-sdk": "^2",
     "axios": "^1.15.0",
     "stripe": "^14.0.0",
     "uuid": "^8.3.2"
