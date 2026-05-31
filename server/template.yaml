@@ -9,9 +9,6 @@ Parameters:
       - staging
       - production
     Description: Deployment target; drives DynamoDB table names and API stage (staging | prod).
-  CognitoUserPoolArn:
-    Type: String
-    Description: ARN of the Cognito User Pool used to validate Authorization JWTs (use a pool per env or the same pool).
   StripeSecretKey:
     Type: String
     NoEcho: true
@@ -125,13 +122,6 @@ Resources:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
         AllowOrigin: "'*'"
-      Auth:
-        DefaultAuthorizer: CognitoAuthorizer
-        AddDefaultAuthorizerToCorsPreflight: false
-
-        Authorizers:
-          CognitoAuthorizer:
-            UserPoolArn: !Ref CognitoUserPoolArn
 
   Default4xxGatewayResponse:
     Type: AWS::ApiGateway::GatewayResponse
@@ -169,8 +159,6 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /products
             Method: GET
-            Auth:
-              Authorizer: NONE
 
   GetProductsBySellerFunction:
     Type: AWS::Serverless::Function
@@ -539,6 +527,6 @@ Outputs:
     Description: Transactions DynamoDB table
     Value: !Ref TransactionsTable
 
-  CognitoAuthorizerNote:
-    Description: Cognito authorizer configuration note
-    Value: "Authenticated by Cognito except GET /products and GET /reviews/{productId}"
+  AuthNote:
+    Description: API Gateway authorizer configuration note
+    Value: "No API Gateway authorizer is configured for this environment."
