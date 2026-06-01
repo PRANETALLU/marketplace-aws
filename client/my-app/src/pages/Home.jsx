@@ -1,341 +1,167 @@
-import { useEffect, useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
-import { getProducts } from '../services/products/api';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useContext } from "react";
+import { getProducts } from "../services/products/api";
 import { UserContext } from "../context/UserContext";
+
+const PLACEHOLDER = "https://via.placeholder.com/300x200?text=No+Image";
 
 const Home = () => {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState("");
+  const [category, setCategory] = useState("All");
   const { user } = useContext(UserContext);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await getProducts();
-        setProducts(data);
-      } catch (error) {
-        console.error("Error fetching products", error);
-      }
-    };
-    fetchProducts();
+    getProducts()
+      .then(setProducts)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  console.log('Home Products', products);
-  console.log('Home User', user);
+  const categories = ["All", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
+
+  const filtered = products.filter((p) => {
+    const matchSearch = p.productName?.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase());
+    const matchCat = category === "All" || p.category === category;
+    return matchSearch && matchCat;
+  });
 
   return (
-    <>
-      <style>{`
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .home-wrapper {
-          min-height: 100vh;
-          width: 100vw;
-          background: linear-gradient(-45deg, #0d6efd, #0a58ca, #3b82f6, #60a5fa);
-          background-size: 400% 400%;
-          animation: gradient 15s ease infinite;
-          padding: 6rem 0 3rem;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          overflow-y: auto;
-        }
-
-        .home-wrapper::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-          background-size: 50px 50px;
-          animation: float 20s ease-in-out infinite;
-          z-index: 0;
-        }
-
-        .home-container {
-          position: relative;
-          z-index: 1;
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: 0 1.5rem;
-        }
-
-        .home-header {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(20px);
-          border-radius: 24px;
-          padding: 2rem 2.5rem;
-          margin-bottom: 2rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          animation: fadeInUp 0.6s ease-out;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 1rem;
-        }
-
-        .home-title {
-          font-size: 2.5rem;
-          font-weight: 800;
-          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          margin: 0;
-        }
-
-        .modern-dashboard-btn {
-          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-          border: none;
-          border-radius: 12px;
-          padding: 0.75rem 2rem;
-          font-weight: 700;
-          color: white;
-          text-decoration: none;
-          transition: all 0.3s ease;
-          box-shadow: 0 8px 20px rgba(13, 110, 253, 0.4);
-          display: inline-block;
-        }
-
-        .modern-dashboard-btn:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 12px 30px rgba(13, 110, 253, 0.5);
-          background: linear-gradient(135deg, #0b5ed7 0%, #084298 100%);
-          color: white;
-        }
-
-        .products-grid {
-          animation: fadeInUp 0.8s ease-out;
-        }
-
-        .product-card {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-          overflow: hidden;
-          transition: all 0.4s ease;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          animation: scaleIn 0.5s ease-out;
-          animation-fill-mode: backwards;
-        }
-
-        .product-card:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          border-color: rgba(13, 110, 253, 0.5);
-        }
-
-        .product-image-wrapper {
-          position: relative;
-          padding: 1.5rem;
-          background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(10, 88, 202, 0.05) 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 200px;
-        }
-
-        .product-image {
-          max-width: 100%;
-          height: auto;
-          max-height: 180px;
-          object-fit: contain;
-          transition: transform 0.3s ease;
-        }
-
-        .product-card:hover .product-image {
-          transform: scale(1.05);
-        }
-
-        .product-card-body {
-          padding: 1.5rem;
-          display: flex;
-          flex-direction: column;
-          flex-grow: 1;
-        }
-
-        .product-title {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: #1e293b;
-          margin-bottom: 0.75rem;
-          line-height: 1.3;
-        }
-
-        .product-price {
-          font-size: 1.5rem;
-          font-weight: 800;
-          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          margin-bottom: 1rem;
-        }
-
-        .product-view-btn {
-          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-          border: none;
-          border-radius: 12px;
-          padding: 0.75rem 1.5rem;
-          font-weight: 700;
-          color: white;
-          text-decoration: none;
-          transition: all 0.3s ease;
-          box-shadow: 0 6px 15px rgba(13, 110, 253, 0.3);
-          margin-top: auto;
-          text-align: center;
-          display: block;
-        }
-
-        .product-view-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(13, 110, 253, 0.4);
-          background: linear-gradient(135deg, #0b5ed7 0%, #084298 100%);
-          color: white;
-        }
-
-        .empty-state {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(20px);
-          border-radius: 24px;
-          padding: 4rem 2rem;
-          text-align: center;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          animation: fadeInUp 0.8s ease-out;
-        }
-
-        .empty-state-icon {
-          font-size: 4rem;
-          margin-bottom: 1rem;
-          opacity: 0.5;
-        }
-
-        .empty-state-text {
-          color: #64748b;
-          font-size: 1.25rem;
-          font-weight: 600;
-        }
-
-        /* Stagger animation for product cards */
-        .product-card:nth-child(1) { animation-delay: 0.1s; }
-        .product-card:nth-child(2) { animation-delay: 0.2s; }
-        .product-card:nth-child(3) { animation-delay: 0.3s; }
-        .product-card:nth-child(4) { animation-delay: 0.4s; }
-        .product-card:nth-child(5) { animation-delay: 0.5s; }
-        .product-card:nth-child(6) { animation-delay: 0.6s; }
-        .product-card:nth-child(7) { animation-delay: 0.7s; }
-        .product-card:nth-child(8) { animation-delay: 0.8s; }
-
-        @media (max-width: 768px) {
-          .home-title {
-            font-size: 2rem;
-          }
-
-          .home-header {
-            padding: 1.5rem;
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .modern-dashboard-btn {
-            width: 100%;
-            text-align: center;
-          }
-
-          .product-card-body {
-            padding: 1.25rem;
-          }
-        }
-      `}</style>
-
-      <div className="home-wrapper">
-        <div className="home-container">
-          <div className="home-header">
-            <h2 className="home-title">Available Products</h2>
-            {user && (
-              <Link to="/dashboard" className="modern-dashboard-btn">
-                Go to Dashboard
-              </Link>
-            )}
+    <div className="page-wrapper">
+      <div className="page-container">
+        {/* Page header */}
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 className="page-heading">Marketplace</h1>
+            <p className="page-subheading">Discover {products.length} products from independent sellers</p>
           </div>
+          {user && (
+            <Link to="/dashboard" className="btn-primary-mp">+ Sell a Product</Link>
+          )}
+        </div>
 
-          {products.length === 0 ? (
+        {/* Filters */}
+        <div className="mp-card mb-4">
+          <div className="mp-card-body d-flex gap-3 align-items-center flex-wrap" style={{ padding: "1rem 1.25rem" }}>
+            <div style={{ flex: "1 1 220px", position: "relative" }}>
+              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }}>🔍</span>
+              <input
+                className="mp-input"
+                style={{ paddingLeft: "2.2rem" }}
+                placeholder="Search products..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  style={{
+                    padding: "0.4rem 1rem",
+                    borderRadius: 999,
+                    border: "1.5px solid",
+                    borderColor: category === cat ? "var(--primary)" : "var(--border)",
+                    background: category === cat ? "var(--primary)" : "var(--surface)",
+                    color: category === cat ? "#fff" : "var(--text-muted)",
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Grid */}
+        {loading ? (
+          <div className="row g-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="col-sm-6 col-lg-4 col-xl-3">
+                <div className="mp-card" style={{ overflow: "hidden" }}>
+                  <div className="skeleton" style={{ height: 180 }} />
+                  <div className="mp-card-body">
+                    <div className="skeleton" style={{ height: 16, marginBottom: 8, borderRadius: 4 }} />
+                    <div className="skeleton" style={{ height: 12, width: "60%", borderRadius: 4 }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="mp-card">
             <div className="empty-state">
               <div className="empty-state-icon">🛍️</div>
-              <p className="empty-state-text">No products available at the moment</p>
+              <h4>{search || category !== "All" ? "No products match your filters" : "No products yet"}</h4>
+              <p>{search || category !== "All" ? "Try adjusting your search or category." : "Be the first to list something!"}</p>
+              {(search || category !== "All") && (
+                <button className="btn-outline-mp" onClick={() => { setSearch(""); setCategory("All"); }}>Clear Filters</button>
+              )}
             </div>
-          ) : (
-            <Row className="products-grid">
-              {products.map((product) => (
-                <Col md={6} lg={4} xl={3} className="mb-4" key={product.productId}>
-                  <div className="product-card">
-                    <div className="product-image-wrapper">
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+              Showing {filtered.length} of {products.length} products
+            </div>
+            <div className="row g-4">
+              {filtered.map((product) => (
+                <div key={product.productId} className="col-sm-6 col-lg-4 col-xl-3">
+                  <div className="mp-card h-100 d-flex flex-column" style={{ overflow: "hidden", transition: "transform 0.2s, box-shadow 0.2s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "var(--shadow-lg)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+                  >
+                    <div style={{ position: "relative", overflow: "hidden", height: 200, background: "var(--surface-2)" }}>
                       <img
-                        src={product.imageUrl || product.image || "https://via.placeholder.com/200"}
+                        src={product.imageUrl || PLACEHOLDER}
                         alt={product.productName}
-                        className="product-image"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s" }}
+                        onError={(e) => { e.target.src = PLACEHOLDER; }}
                       />
+                      {product.category && (
+                        <span className="badge-mp badge-primary" style={{ position: "absolute", top: 10, left: 10 }}>
+                          {product.category}
+                        </span>
+                      )}
                     </div>
-                    <div className="product-card-body">
-                      <h3 className="product-title">{product.productName}</h3>
-                      <div className="product-price">${product.price}</div>
+                    <div className="mp-card-body d-flex flex-column flex-grow-1">
+                      <h3 style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text)", marginBottom: "0.4rem", lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {product.productName}
+                      </h3>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.75rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", flex: 1 }}>
+                        {product.description}
+                      </p>
+                      <div className="d-flex align-items-center justify-content-between mb-3">
+                        <span style={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--primary)" }}>
+                          ${Number(product.price).toFixed(2)}
+                        </span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                          {product.quantity > 0 ? `${product.quantity} in stock` : <span className="text-danger">Out of stock</span>}
+                        </span>
+                      </div>
                       <Link
                         to={`/product/${product.productId}`}
-                        className="product-view-btn"
+                        className="btn-primary-mp justify-content-center"
+                        style={{ width: "100%" }}
                       >
                         View Details
                       </Link>
                     </div>
                   </div>
-                </Col>
+                </div>
               ))}
-            </Row>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
