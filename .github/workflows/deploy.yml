@@ -28,6 +28,27 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Write client env file
+        run: |
+          ENV_NAME=production
+          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
+
+          if [ "$ENV_NAME" = "staging" ]; then
+            cat > client/my-app/.env.staging <<EOF
+          VITE_ENVIRONMENT=staging
+          VITE_API_URL=${{ secrets.STAGING_API_URL }}
+          VITE_COGNITO_USER_POOL_ID=${{ secrets.STAGING_COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_CLIENT_ID=${{ secrets.STAGING_COGNITO_CLIENT_ID }}
+          EOF
+          else
+            cat > client/my-app/.env.production <<EOF
+          VITE_ENVIRONMENT=production
+          VITE_API_URL=${{ secrets.PRODUCTION_API_URL }}
+          VITE_COGNITO_USER_POOL_ID=${{ secrets.PRODUCTION_COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_CLIENT_ID=${{ secrets.PRODUCTION_COGNITO_CLIENT_ID }}
+          EOF
+          fi
+
       - name: Build client
         run: |
           cd client/my-app
