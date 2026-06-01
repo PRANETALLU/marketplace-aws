@@ -15,6 +15,7 @@ export const UserProvider = ({ children }) => {
         if (userInfo) {
           setUser({
             id: userInfo.sub,
+            sub: userInfo.sub,
             username: userInfo["cognito:username"],
             email: userInfo.email,
             emailVerified: userInfo.email_verified,
@@ -36,6 +37,7 @@ export const UserProvider = ({ children }) => {
       if (userInfo) {
         setUser({
           id: userInfo.sub,
+          sub: userInfo.sub,
           username: userInfo["cognito:username"],
           email: userInfo.email,
           emailVerified: userInfo.email_verified,
