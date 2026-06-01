@@ -34,19 +34,17 @@ jobs:
           if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
 
           if [ "$ENV_NAME" = "staging" ]; then
-            cat > client/my-app/.env.staging <<EOF
-          VITE_ENVIRONMENT=staging
-          VITE_API_URL=${{ secrets.STAGING_API_URL }}
-          VITE_COGNITO_USER_POOL_ID=${{ secrets.STAGING_COGNITO_USER_POOL_ID }}
-          VITE_COGNITO_CLIENT_ID=${{ secrets.STAGING_COGNITO_CLIENT_ID }}
-          EOF
+            printf 'VITE_ENVIRONMENT=staging\nVITE_API_URL=%s\nVITE_COGNITO_USER_POOL_ID=%s\nVITE_COGNITO_CLIENT_ID=%s\n' \
+              "${{ secrets.STAGING_API_URL }}" \
+              "${{ secrets.STAGING_COGNITO_USER_POOL_ID }}" \
+              "${{ secrets.STAGING_COGNITO_CLIENT_ID }}" \
+              > client/my-app/.env.staging
           else
-            cat > client/my-app/.env.production <<EOF
-          VITE_ENVIRONMENT=production
-          VITE_API_URL=${{ secrets.PRODUCTION_API_URL }}
-          VITE_COGNITO_USER_POOL_ID=${{ secrets.PRODUCTION_COGNITO_USER_POOL_ID }}
-          VITE_COGNITO_CLIENT_ID=${{ secrets.PRODUCTION_COGNITO_CLIENT_ID }}
-          EOF
+            printf 'VITE_ENVIRONMENT=production\nVITE_API_URL=%s\nVITE_COGNITO_USER_POOL_ID=%s\nVITE_COGNITO_CLIENT_ID=%s\n' \
+              "${{ secrets.PRODUCTION_API_URL }}" \
+              "${{ secrets.PRODUCTION_COGNITO_USER_POOL_ID }}" \
+              "${{ secrets.PRODUCTION_COGNITO_CLIENT_ID }}" \
+              > client/my-app/.env.production
           fi
 
       - name: Build client
@@ -108,12 +106,22 @@ jobs:
             --output text \
             --region ${{ env.AWS_REGION }})
 
+          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
+            echo "ERROR: Could not resolve ClientHostingBucketName from stack outputs"
+            exit 1
+          fi
+
           echo "Syncing to bucket: $BUCKET_NAME"
+          echo "dist/ contents:"
+          ls client/my-app/dist/
 
           aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME \
             --delete \
             --cache-control "public, max-age=3600" \
             --region ${{ env.AWS_REGION }}
+
+          echo "Sync complete. Object count:"
+          aws s3 ls s3://$BUCKET_NAME --recursive --summarize --region ${{ env.AWS_REGION }} | tail -2
 
       - name: Print deployment URLs
         run: |
