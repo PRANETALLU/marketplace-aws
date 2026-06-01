@@ -1,194 +1,305 @@
-import React, { useContext } from "react";
-import { Navbar, Nav, Container, Button } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import React, { useContext, useEffect, useState } from "react";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
+import { getCartItems } from "../services/carts/api";
+
+const NAV_LINK_STYLE = ({ isActive }) => ({
+  color: isActive ? "#fff" : "rgba(255,255,255,0.75)",
+  fontWeight: isActive ? 700 : 500,
+  fontSize: "0.9rem",
+  textDecoration: "none",
+  padding: "0.4rem 0.75rem",
+  borderRadius: "8px",
+  background: isActive ? "rgba(255,255,255,0.18)" : "transparent",
+  transition: "all 0.15s",
+  display: "inline-block",
+});
 
 const Header = () => {
   const { user, logout } = useContext(UserContext);
   const navigate = useNavigate();
+  const [cartCount, setCartCount] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setCartCount(0); return; }
+    getCartItems()
+      .then((data) => {
+        const items = data?.items || [];
+        setCartCount(items.reduce((sum, i) => sum + (i.quantity || 1), 0));
+      })
+      .catch(() => {});
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    navigate("/");
   };
+
+  const initial = user?.username?.charAt(0).toUpperCase() || "?";
 
   return (
     <>
       <style>{`
-        .modern-navbar {
-          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
-          backdrop-filter: blur(10px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        .mp-navbar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 1000;
+          height: 64px;
+          background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%);
+          box-shadow: 0 2px 12px rgba(29,78,216,0.35);
+          display: flex;
+          align-items: center;
         }
-
-        .brand-logo {
-          width: 40px;
-          height: 40px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+        .mp-nav-inner {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        .mp-brand {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          text-decoration: none;
+          flex-shrink: 0;
+        }
+        .mp-brand-icon {
+          width: 36px;
+          height: 36px;
+          background: rgba(255,255,255,0.2);
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 1.5rem;
+          font-size: 1.1rem;
         }
-
-        .brand-text {
-          font-size: 1.5rem;
-          letter-spacing: -0.5px;
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        .mp-brand-name {
+          font-size: 1.15rem;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.3px;
         }
-
-        .user-badge {
-          background: rgba(255, 255, 255, 0.15);
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(10px);
-          padding: 0.5rem 1rem;
-        }
-
-        .user-avatar {
-          width: 32px;
-          height: 32px;
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-          border-radius: 50%;
-          border: 2px solid rgba(255, 255, 255, 0.5);
+        .mp-nav-links {
           display: flex;
           align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 0.85rem;
-          color: #0a58ca;
+          gap: 0.25rem;
+          flex: 1;
         }
-
-        .modern-btn {
-          border-radius: 12px;
-          font-weight: 600;
+        .mp-nav-right {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-left: auto;
+        }
+        .mp-cart-btn {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          color: rgba(255,255,255,0.85);
           font-size: 0.9rem;
-          transition: all 0.3s ease;
-          border: none;
-        }
-
-        .btn-logout {
-          background: rgba(255, 255, 255, 0.2);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          color: white;
-        }
-
-        .btn-logout:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          color: white;
-        }
-
-        .btn-login {
-          background: transparent;
-          border: 2px solid rgba(255, 255, 255, 0.4);
-          color: white;
-        }
-
-        .btn-login:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          color: white;
-          border-color: rgba(255, 255, 255, 0.6);
-        }
-
-        .btn-signup {
-          background: white;
-          color: #0d6efd;
-          font-weight: 700;
-          box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-signup:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
-          color: #0d6efd;
-          background: white;
-        }
-
-        .navbar-toggler {
-          border: none;
-          background: rgba(255, 255, 255, 0.2);
+          font-weight: 500;
+          background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.2);
           border-radius: 8px;
+          padding: 0.4rem 0.85rem;
+          text-decoration: none;
+          transition: all 0.15s;
+          cursor: pointer;
         }
-
-        .navbar-toggler:focus {
-          box-shadow: none;
-          outline: none;
+        .mp-cart-btn:hover {
+          background: rgba(255,255,255,0.22);
+          color: #fff;
+          text-decoration: none;
+        }
+        .mp-cart-badge {
+          position: absolute;
+          top: -6px;
+          right: -6px;
+          background: #ef4444;
+          color: #fff;
+          font-size: 0.65rem;
+          font-weight: 800;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #2563eb;
+        }
+        .mp-user-chip {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 999px;
+          padding: 0.3rem 0.85rem 0.3rem 0.3rem;
+        }
+        .mp-avatar {
+          width: 28px;
+          height: 28px;
+          background: rgba(255,255,255,0.9);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 0.75rem;
+          color: #1d4ed8;
+        }
+        .mp-username {
+          color: #fff;
+          font-size: 0.875rem;
+          font-weight: 600;
+        }
+        .mp-logout-btn {
+          background: rgba(255,255,255,0.15);
+          border: 1px solid rgba(255,255,255,0.25);
+          color: rgba(255,255,255,0.9);
+          border-radius: 8px;
+          padding: 0.4rem 0.85rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .mp-logout-btn:hover {
+          background: rgba(255,255,255,0.25);
+          color: #fff;
+        }
+        .mp-auth-btn {
+          background: rgba(255,255,255,0.15);
+          border: 1.5px solid rgba(255,255,255,0.3);
+          color: #fff;
+          border-radius: 8px;
+          padding: 0.4rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s;
+          text-decoration: none;
+        }
+        .mp-auth-btn:hover { background: rgba(255,255,255,0.25); color: #fff; text-decoration: none; }
+        .mp-auth-btn.solid {
+          background: #fff;
+          color: #1d4ed8;
+          border-color: #fff;
+        }
+        .mp-auth-btn.solid:hover { background: #e0e7ff; color: #1d4ed8; }
+        .mp-hamburger {
+          display: none;
+          background: rgba(255,255,255,0.15);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 8px;
+          padding: 0.4rem 0.6rem;
+          cursor: pointer;
+          flex-direction: column;
+          gap: 4px;
+          margin-left: auto;
+        }
+        .mp-hamburger span {
+          display: block;
+          width: 20px;
+          height: 2px;
+          background: #fff;
+          border-radius: 2px;
+        }
+        @media (max-width: 768px) {
+          .mp-nav-links { display: none; }
+          .mp-nav-right  { display: none; }
+          .mp-hamburger  { display: flex; }
+          .mp-mobile-menu {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            background: #1d4ed8;
+            padding: 1rem 1.5rem;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.2s ease;
+          }
+          .mp-mobile-menu a, .mp-mobile-menu button {
+            width: 100%;
+            text-align: left;
+          }
         }
       `}</style>
 
-      <Navbar expand="lg" fixed="top" className="modern-navbar py-0">
-        <Container fluid className="px-4">
-          <Navbar.Brand
-            onClick={() => {
-              if (user) {
-                navigate("/home");
-              } else {
-                navigate("/");
-              }
-            }}
-            className="d-flex align-items-center gap-2 py-3"
-            style={{ cursor: "pointer" }}
-          >
-            <div className="brand-logo">
-              ✨
-            </div>
-            <span className="fw-bold text-white brand-text">
-              MyApp
-            </span>
-          </Navbar.Brand>
+      <nav className="mp-navbar">
+        <div className="mp-nav-inner">
+          <Link to={user ? "/home" : "/"} className="mp-brand">
+            <div className="mp-brand-icon">🛍️</div>
+            <span className="mp-brand-name">Marketplace</span>
+          </Link>
 
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ms-auto d-flex align-items-center gap-3">
-              {user ? (
-                <>
-                  <div className="user-badge d-flex align-items-center gap-2">
-                    <div className="user-avatar">
-                      {user?.username?.charAt(0).toUpperCase() || "G"}
-                    </div>
-                    <span className="text-white fw-semibold" style={{ fontSize: '0.95rem' }}>
-                      {user?.username || "Guest"}
-                    </span>
-                  </div>
-                  
-                  <Button
-                    onClick={handleLogout}
-                    className="modern-btn btn-logout px-3 py-2"
-                  >
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    onClick={() => navigate("/login")}
-                    className="modern-btn btn-login px-4 py-2"
-                  >
-                    Login
-                  </Button>
-                  
-                  <Button
-                    onClick={() => navigate("/signup")}
-                    className="modern-btn btn-signup px-4 py-2"
-                  >
-                    Sign Up
-                  </Button>
-                </>
-              )}
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+          {user && (
+            <div className="mp-nav-links">
+              <NavLink to="/home" style={NAV_LINK_STYLE}>Browse</NavLink>
+              <NavLink to="/orders" style={NAV_LINK_STYLE}>My Orders</NavLink>
+              <NavLink to="/dashboard" style={NAV_LINK_STYLE}>Dashboard</NavLink>
+            </div>
+          )}
+
+          <div className="mp-nav-right">
+            {user ? (
+              <>
+                <Link to="/cart" className="mp-cart-btn">
+                  🛒 Cart
+                  {cartCount > 0 && <span className="mp-cart-badge">{cartCount}</span>}
+                </Link>
+                <div className="mp-user-chip">
+                  <div className="mp-avatar">{initial}</div>
+                  <span className="mp-username">{user.username}</span>
+                </div>
+                <button className="mp-logout-btn" onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="mp-auth-btn">Login</Link>
+                <Link to="/signup" className="mp-auth-btn solid">Sign Up</Link>
+              </>
+            )}
+          </div>
+
+          <button className="mp-hamburger" onClick={() => setMenuOpen((o) => !o)} aria-label="Toggle menu">
+            <span /><span /><span />
+          </button>
+        </div>
+      </nav>
+
+      {menuOpen && (
+        <div className="mp-mobile-menu">
+          {user ? (
+            <>
+              <NavLink to="/home" style={NAV_LINK_STYLE} onClick={() => setMenuOpen(false)}>Browse</NavLink>
+              <NavLink to="/cart" style={NAV_LINK_STYLE} onClick={() => setMenuOpen(false)}>Cart {cartCount > 0 && `(${cartCount})`}</NavLink>
+              <NavLink to="/orders" style={NAV_LINK_STYLE} onClick={() => setMenuOpen(false)}>My Orders</NavLink>
+              <NavLink to="/dashboard" style={NAV_LINK_STYLE} onClick={() => setMenuOpen(false)}>Dashboard</NavLink>
+              <button className="mp-logout-btn" onClick={() => { setMenuOpen(false); handleLogout(); }}>Logout</button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="mp-auth-btn" onClick={() => setMenuOpen(false)}>Login</Link>
+              <Link to="/signup" className="mp-auth-btn solid" onClick={() => setMenuOpen(false)}>Sign Up</Link>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 };
