@@ -1,248 +1,381 @@
-import React from "react";
-import { Container, Button } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+const FEATURES = [
+  {
+    icon: "🏪",
+    title: "List & Sell",
+    desc: "Create product listings with images, set your price, and start selling in minutes.",
+  },
+  {
+    icon: "🔍",
+    title: "Browse & Discover",
+    desc: "Search and filter thousands of products across categories from independent sellers.",
+  },
+  {
+    icon: "🔒",
+    title: "Secure Payments",
+    desc: "Powered by Stripe — industry-standard encrypted checkout for every transaction.",
+  },
+  {
+    icon: "📦",
+    title: "Order Tracking",
+    desc: "Sellers update order status in real time. Buyers always know where their order stands.",
+  },
+  {
+    icon: "⭐",
+    title: "Reviews",
+    desc: "Verified-purchase reviews build trust between buyers and sellers on the platform.",
+  },
+  {
+    icon: "☁️",
+    title: "Cloud-Native",
+    desc: "Fully serverless on AWS — Lambda, DynamoDB, S3, and API Gateway under the hood.",
+  },
+];
 
 const Welcome = () => {
-  const navigate = useNavigate();
-  const currentStage = import.meta.env.VITE_ENVIRONMENT || "unknown";
+  const env = import.meta.env.VITE_ENVIRONMENT;
 
   return (
     <>
       <style>{`
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .welcome-container {
+        .welcome-page {
           min-height: 100vh;
-          width: 100vw;
-          background: linear-gradient(-45deg, #0d6efd, #0a58ca, #3b82f6, #60a5fa);
-          background-size: 400% 400%;
-          animation: gradient 15s ease infinite;
+          background: var(--bg);
+          padding-top: var(--navbar-height);
+        }
+
+        /* --- Hero --- */
+        .hero {
+          background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
+          padding: 5rem 1.5rem 4.5rem;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+        }
+        .hero::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(ellipse at 20% 50%, rgba(96,165,250,0.15) 0%, transparent 60%),
+            radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.12) 0%, transparent 50%);
+          pointer-events: none;
+        }
+        .hero-inner {
+          position: relative;
+          max-width: 720px;
+          margin: 0 auto;
+          animation: fadeInUp 0.55s ease both;
+        }
+        .hero-env-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 999px;
+          padding: 0.3rem 0.9rem;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: rgba(255,255,255,0.85);
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          margin-bottom: 1.75rem;
+        }
+        .hero-env-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #4ade80;
+          box-shadow: 0 0 6px #4ade80;
+        }
+        .hero-title {
+          font-size: clamp(2rem, 5vw, 3.25rem);
+          font-weight: 800;
+          color: #fff;
+          line-height: 1.15;
+          letter-spacing: -1px;
+          margin-bottom: 1.25rem;
+        }
+        .hero-title span {
+          color: #93c5fd;
+        }
+        .hero-subtitle {
+          font-size: 1.1rem;
+          color: rgba(255,255,255,0.75);
+          line-height: 1.65;
+          max-width: 520px;
+          margin: 0 auto 2.25rem;
+        }
+        .hero-actions {
+          display: flex;
+          gap: 0.75rem;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+        .hero-btn-primary {
+          background: #fff;
+          color: #1d4ed8;
+          border: none;
+          border-radius: var(--radius);
+          padding: 0.8rem 2rem;
+          font-size: 0.95rem;
+          font-weight: 700;
+          cursor: pointer;
+          text-decoration: none;
+          transition: all 0.15s;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+        }
+        .hero-btn-primary:hover {
+          background: #e0e7ff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+          color: #1d4ed8;
+          text-decoration: none;
+        }
+        .hero-btn-secondary {
+          background: rgba(255,255,255,0.1);
+          color: #fff;
+          border: 1.5px solid rgba(255,255,255,0.3);
+          border-radius: var(--radius);
+          padding: 0.8rem 2rem;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: none;
+          transition: all 0.15s;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+        }
+        .hero-btn-secondary:hover {
+          background: rgba(255,255,255,0.2);
+          color: #fff;
+          text-decoration: none;
+          transform: translateY(-2px);
+        }
+
+        /* --- Stats bar --- */
+        .stats-bar {
+          background: #fff;
+          border-bottom: 1px solid var(--border);
+          padding: 1.25rem 1.5rem;
+        }
+        .stats-inner {
+          max-width: 900px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: center;
+          gap: 0;
+          flex-wrap: wrap;
+        }
+        .stat-item {
+          text-align: center;
+          padding: 0 2.5rem;
+          border-right: 1px solid var(--border);
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-value {
+          font-size: 1.5rem;
+          font-weight: 800;
+          color: var(--primary);
+          line-height: 1.2;
+        }
+        .stat-label {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-top: 0.2rem;
+        }
+
+        /* --- Features --- */
+        .features-section {
+          padding: 4rem 1.5rem;
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+        .features-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: var(--primary);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 0.5rem;
+          text-align: center;
+        }
+        .features-heading {
+          font-size: clamp(1.5rem, 3vw, 2rem);
+          font-weight: 800;
+          color: var(--text);
+          text-align: center;
+          margin-bottom: 0.75rem;
+          letter-spacing: -0.5px;
+        }
+        .features-subheading {
+          color: var(--text-muted);
+          text-align: center;
+          font-size: 1rem;
+          max-width: 500px;
+          margin: 0 auto 3rem;
+          line-height: 1.6;
+        }
+        .features-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 1.25rem;
+        }
+        .feature-card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: 1.5rem;
+          transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+        }
+        .feature-card:hover {
+          box-shadow: var(--shadow-md);
+          transform: translateY(-3px);
+          border-color: var(--primary);
+        }
+        .feature-icon-wrap {
+          width: 44px;
+          height: 44px;
+          background: var(--primary-light);
+          border-radius: var(--radius);
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 2rem;
-          padding-top: 5rem;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          overflow: hidden;
-          z-index: 0;
-        }
-
-        .welcome-container::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-          background-size: 50px 50px;
-          animation: float 20s ease-in-out infinite;
-        }
-
-        .welcome-card {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(20px);
-          border-radius: 24px;
-          padding: 3rem 2.5rem;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          max-width: 600px;
-          width: 100%;
-          position: relative;
-          z-index: 1;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          animation: fadeInUp 0.8s ease-out;
-          margin-top: 80px;
-          margin-bottom: 80px;
-        }
-
-        .welcome-icon {
-          font-size: 4rem;
+          font-size: 1.25rem;
           margin-bottom: 1rem;
-          animation: float 3s ease-in-out infinite;
         }
-
-        .welcome-title {
-          font-size: 2.5rem;
-          font-weight: 800;
-          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          margin-bottom: 1rem;
-          line-height: 1.2;
-        }
-
-        .welcome-subtitle {
-          color: #64748b;
-          font-size: 1.1rem;
-          margin-bottom: 2rem;
-          line-height: 1.6;
-        }
-
-        .stage-badge {
-          display: inline-block;
-          padding: 0.5rem 1.5rem;
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-          border-radius: 12px;
-          font-weight: 700;
-          color: #0a58ca;
-          margin-bottom: 2rem;
-          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .modern-welcome-btn {
-          padding: 0.875rem 2.5rem;
+        .feature-card h4 {
           font-size: 1rem;
           font-weight: 700;
-          border-radius: 12px;
-          border: none;
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
+          color: var(--text);
+          margin: 0 0 0.4rem;
+        }
+        .feature-card p {
+          font-size: 0.875rem;
+          color: var(--text-muted);
+          line-height: 1.55;
+          margin: 0;
         }
 
-        .btn-primary-modern {
-          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-          color: white;
-          box-shadow: 0 10px 30px rgba(13, 110, 253, 0.4);
-        }
-
-        .btn-primary-modern:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 15px 40px rgba(13, 110, 253, 0.5);
-          background: linear-gradient(135deg, #0b5ed7 0%, #084298 100%);
-        }
-
-        .btn-outline-modern {
-          background: transparent;
-          color: #0d6efd;
-          border: 2px solid #0d6efd;
-          box-shadow: 0 5px 20px rgba(13, 110, 253, 0.2);
-        }
-
-        .btn-outline-modern:hover {
-          background: #0d6efd;
-          color: white;
-          transform: translateY(-3px);
-          box-shadow: 0 10px 30px rgba(13, 110, 253, 0.4);
-        }
-
-        .feature-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 1rem;
-          margin-top: 2rem;
-          padding-top: 2rem;
-          border-top: 1px solid rgba(100, 116, 139, 0.2);
-        }
-
-        .feature-item {
+        /* --- CTA strip --- */
+        .cta-strip {
+          background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+          padding: 3.5rem 1.5rem;
           text-align: center;
-          padding: 1rem;
-          background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(10, 88, 202, 0.05) 100%);
-          border-radius: 12px;
-          transition: all 0.3s ease;
         }
-
-        .feature-item:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 25px rgba(13, 110, 253, 0.15);
-        }
-
-        .feature-icon {
-          font-size: 2rem;
+        .cta-strip h2 {
+          font-size: clamp(1.4rem, 3vw, 1.9rem);
+          font-weight: 800;
+          color: #fff;
           margin-bottom: 0.5rem;
+          letter-spacing: -0.5px;
+        }
+        .cta-strip p {
+          color: rgba(255,255,255,0.72);
+          font-size: 1rem;
+          margin-bottom: 1.75rem;
         }
 
-        .feature-text {
-          font-size: 0.85rem;
-          color: #64748b;
-          font-weight: 600;
+        /* --- Footer --- */
+        .welcome-footer {
+          background: var(--surface);
+          border-top: 1px solid var(--border);
+          padding: 1.25rem 1.5rem;
+          text-align: center;
+          font-size: 0.8rem;
+          color: var(--text-muted);
         }
 
-        @media (max-width: 768px) {
-          .welcome-title {
-            font-size: 2rem;
-          }
-          
-          .welcome-card {
-            padding: 2rem 1.5rem;
-          }
+        @media (max-width: 600px) {
+          .stat-item { padding: 0.75rem 1.25rem; border-right: none; border-bottom: 1px solid var(--border); }
+          .stat-item:last-child { border-bottom: none; }
+          .stats-inner { flex-direction: column; }
         }
       `}</style>
 
-      <div className="welcome-container">
-        <div className="welcome-card">
-          <div className="text-center">
-            <div className="welcome-icon">✨</div>
-            
-            <h1 className="welcome-title">
-              Welcome to MyApp
+      <div className="welcome-page">
+        {/* Hero */}
+        <section className="hero">
+          <div className="hero-inner">
+            {env && (
+              <div className="hero-env-badge">
+                <span className="hero-env-dot" />
+                {env} environment
+              </div>
+            )}
+            <h1 className="hero-title">
+              The marketplace built for<br />
+              <span>independent sellers</span>
             </h1>
-            
-            <p className="welcome-subtitle">
-              Experience seamless shopping, smarter dashboards, and a smooth experience that brings your ideas to life.
+            <p className="hero-subtitle">
+              List products, reach buyers, and process payments securely —
+              all on a fully serverless AWS infrastructure.
             </p>
-
-            <div className="stage-badge">
-              {currentStage.toUpperCase()} Environment
-            </div>
-
-            <div className="d-flex flex-wrap gap-3 justify-content-center mb-4">
-              <Button
-                className="modern-welcome-btn btn-primary-modern"
-                onClick={() => navigate("/signup")}
-              >
-                Get Started
-              </Button>
-              <Button
-                className="modern-welcome-btn btn-outline-modern"
-                onClick={() => navigate("/login")}
-              >
-                Login
-              </Button>
-            </div>
-
-            <div className="feature-grid">
-              <div className="feature-item">
-                <div className="feature-icon">🚀</div>
-                <div className="feature-text">Fast & Smooth</div>
-              </div>
-              <div className="feature-item">
-                <div className="feature-icon">🔒</div>
-                <div className="feature-text">Secure</div>
-              </div>
-              <div className="feature-item">
-                <div className="feature-icon">💡</div>
-                <div className="feature-text">Intuitive</div>
-              </div>
+            <div className="hero-actions">
+              <Link to="/signup" className="hero-btn-primary">Get Started Free</Link>
+              <Link to="/login" className="hero-btn-secondary">Sign In</Link>
             </div>
           </div>
+        </section>
+
+        {/* Stats */}
+        <div className="stats-bar">
+          <div className="stats-inner">
+            {[
+              ["Serverless", "Architecture"],
+              ["AWS Lambda", "Compute"],
+              ["Stripe", "Payments"],
+              ["S3 + DynamoDB", "Storage"],
+            ].map(([val, label]) => (
+              <div key={label} className="stat-item">
+                <div className="stat-value">{val}</div>
+                <div className="stat-label">{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Features */}
+        <section className="features-section">
+          <div className="features-label">Platform Capabilities</div>
+          <h2 className="features-heading">Everything you need to buy and sell</h2>
+          <p className="features-subheading">
+            From listing creation to order fulfillment, the full commerce workflow is covered.
+          </p>
+          <div className="features-grid">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="feature-card">
+                <div className="feature-icon-wrap">{f.icon}</div>
+                <h4>{f.title}</h4>
+                <p>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="cta-strip">
+          <h2>Ready to start selling?</h2>
+          <p>Create an account in seconds. No credit card required.</p>
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <Link to="/signup" className="hero-btn-primary">Create Account</Link>
+            <Link to="/login" className="hero-btn-secondary">I already have an account</Link>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="welcome-footer">
+          Built with React · AWS Lambda · DynamoDB · S3 · API Gateway · Cognito · Stripe
+        </footer>
       </div>
     </>
   );

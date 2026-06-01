@@ -32,7 +32,9 @@ jobs:
         run: |
           cd client/my-app
           npm ci
-          npm run build
+          ENV_NAME=production
+          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
+          npm run build:$ENV_NAME
 
       - name: Install server handlers and layers dependencies
         run: |
@@ -72,7 +74,7 @@ jobs:
           ENV_NAME=production
           if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
           # deploy without passing sensitive parameters here; configure via samconfig or Parameter Store
-          sam deploy --config-env $ENV_NAME --no-confirm-changeset
+          sam deploy --config-env $ENV_NAME --no-confirm-changeset --no-fail-on-empty-changeset
 
       - name: Deploy client to S3
         run: |
@@ -89,8 +91,11 @@ jobs:
             --cache-control "public, max-age=3600" \
             --region ${{ env.AWS_REGION }}
 
-      - name: Print API endpoint (best-effort)
+      - name: Print deployment URLs
         run: |
           ENV_NAME=production
           if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
+          echo "=== API Endpoint ==="
           aws cloudformation describe-stacks --stack-name marketplace-api-$ENV_NAME --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --region ${{ env.AWS_REGION }} --output text || true
+          echo "=== Frontend URL ==="
+          aws cloudformation describe-stacks --stack-name marketplace-api-$ENV_NAME --query 'Stacks[0].Outputs[?OutputKey==`ClientWebsiteURL`].OutputValue' --region ${{ env.AWS_REGION }} --output text || true

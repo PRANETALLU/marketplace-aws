@@ -114,6 +114,33 @@ Resources:
         - AttributeName: transactionId
           KeyType: HASH
 
+  # --- Client hosting (static website) ---
+  ClientHostingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub marketplace-${EnvironmentName}-123
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+
+  ClientHostingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ClientHostingBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub ${ClientHostingBucket.Arn}/*
+
   ProductImagesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -588,6 +615,14 @@ Outputs:
   TransactionsTableName:
     Description: Transactions DynamoDB table
     Value: !Ref TransactionsTable
+
+  ClientWebsiteURL:
+    Description: S3 static website URL for the frontend
+    Value: !GetAtt ClientHostingBucket.WebsiteURL
+
+  ClientHostingBucketName:
+    Description: S3 bucket that holds the built frontend assets
+    Value: !Ref ClientHostingBucket
 
   ProductImagesBucketName:
     Description: Product image uploads S3 bucket

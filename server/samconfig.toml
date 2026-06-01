@@ -26,7 +26,8 @@ parallel = true
 
 [staging.deploy.parameters]
 capabilities = "CAPABILITY_IAM"
-confirm_changeset = true
+confirm_changeset = false
+fail_on_empty_changeset = false
 resolve_s3 = true
 region = "us-east-1"
 parameter_overrides = "EnvironmentName=staging"
@@ -40,7 +41,8 @@ parallel = true
 
 [production.deploy.parameters]
 capabilities = "CAPABILITY_IAM"
-confirm_changeset = true
+confirm_changeset = false
+fail_on_empty_changeset = false
 resolve_s3 = true
 region = "us-east-1"
 parameter_overrides = "EnvironmentName=production"
