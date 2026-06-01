@@ -10,12 +10,19 @@ const CreateProductForm = ({ onProductCreated }) => {
     category: "",
     quantity: "",
   });
+  const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(""); // State for error message
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError(""); // Clear error when user types
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -31,7 +38,7 @@ const CreateProductForm = ({ onProductCreated }) => {
         quantity: Number(formData.quantity),
       };
 
-      const newProduct = await createProduct(payload);
+      const newProduct = await createProduct(payload, imageFile);
       onProductCreated(newProduct);
 
       // Reset form
@@ -42,6 +49,8 @@ const CreateProductForm = ({ onProductCreated }) => {
         category: "",
         quantity: "",
       });
+      setImageFile(null);
+      e.target.reset();
     } catch (err) {
       console.error("Error creating product:", err);
 
@@ -112,6 +121,18 @@ const CreateProductForm = ({ onProductCreated }) => {
           onChange={handleChange}
           required
         />
+      </Form.Group>
+
+      <Form.Group className="mb-3">
+        <Form.Label>Product Image</Form.Label>
+        <Form.Control
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={handleImageChange}
+        />
+        <Form.Text muted>
+          Upload a JPEG, PNG, WebP, or GIF image for this listing.
+        </Form.Text>
       </Form.Group>
 
       <Button type="submit" disabled={loading}>

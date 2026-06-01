@@ -313,7 +313,7 @@ const Home = () => {
                   <div className="product-card">
                     <div className="product-image-wrapper">
                       <img
-                        src={product.image || "https://via.placeholder.com/200"}
+                        src={product.imageUrl || product.image || "https://via.placeholder.com/200"}
                         alt={product.productName}
                         className="product-image"
                       />

@@ -24,8 +24,27 @@ export const getProductById = async (id) => {
   return response.data;
 };
 
-export const createProduct = async (formData) => {
-  const response = await api.post('/products', formData);
+export const uploadProductImage = async (imageFile) => {
+  const { data } = await api.post('/products/upload-url', {
+    fileName: imageFile.name,
+    contentType: imageFile.type,
+  });
+
+  await axios.put(data.uploadUrl, imageFile, {
+    headers: {
+      'Content-Type': imageFile.type,
+    },
+  });
+
+  return {
+    imageKey: data.imageKey,
+    imageUrl: data.imageUrl,
+  };
+};
+
+export const createProduct = async (formData, imageFile) => {
+  const imageData = imageFile ? await uploadProductImage(imageFile) : {};
+  const response = await api.post('/products', { ...formData, ...imageData });
   return response.data;
 };
 

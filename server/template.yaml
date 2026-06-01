@@ -40,6 +40,7 @@ Globals:
         ORDERS_TABLE: !Ref OrdersTable
         REVIEWS_TABLE: !Ref ReviewsTable
         TRANSACTIONS_TABLE: !Ref TransactionsTable
+        PRODUCT_IMAGES_BUCKET: !Ref ProductImagesBucket
 
 Resources:
   # --- Lambda Layer for Shared Dependencies ---
@@ -112,6 +113,51 @@ Resources:
       KeySchema:
         - AttributeName: transactionId
           KeyType: HASH
+
+  ProductImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub marketplace-${EnvironmentName}-product-images-${AWS::AccountId}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3000
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteProductImageUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+          - Id: MoveProductImagesToIntelligentTiering
+            Status: Enabled
+            Prefix: product-images/
+            Transitions:
+              - StorageClass: INTELLIGENT_TIERING
+                TransitionInDays: 30
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  ProductImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ProductImagesBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowPublicReadProductImages
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub ${ProductImagesBucket.Arn}/product-images/*
 
   MarketplaceApi:
     Type: AWS::Serverless::Api
@@ -191,6 +237,22 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /products/{productId}
             Method: GET
+
+  CreateProductUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/products/createUploadUrl/
+      Handler: index.handler
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ProductImagesBucket
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /products/upload-url
+            Method: POST
 
   CreateProductFunction:
     Type: AWS::Serverless::Function
@@ -526,6 +588,10 @@ Outputs:
   TransactionsTableName:
     Description: Transactions DynamoDB table
     Value: !Ref TransactionsTable
+
+  ProductImagesBucketName:
+    Description: Product image uploads S3 bucket
+    Value: !Ref ProductImagesBucket
 
   AuthNote:
     Description: API Gateway authorizer configuration note

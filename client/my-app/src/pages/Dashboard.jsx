@@ -275,6 +275,16 @@ const Dashboard = () => {
           font-weight: 600;
         }
 
+        .product-list-thumbnail {
+          width: 48px;
+          height: 48px;
+          border-radius: 10px;
+          object-fit: cover;
+          margin-right: 0.75rem;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+        }
+
         .empty-state {
           text-align: center;
           padding: 3rem 2rem;
@@ -408,7 +418,16 @@ const Dashboard = () => {
                                   key={p.productId}
                                   className="modern-list-item d-flex justify-content-between align-items-center"
                                 >
-                                  <span>{p.productName}</span>
+                                  <span className="d-flex align-items-center">
+                                    {p.imageUrl && (
+                                      <img
+                                        src={p.imageUrl}
+                                        alt={p.productName}
+                                        className="product-list-thumbnail"
+                                      />
+                                    )}
+                                    {p.productName}
+                                  </span>
                                   <span>
                                     ${p.price} (Qty: {p.quantity})
                                   </span>

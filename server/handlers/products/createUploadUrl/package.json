@@ -1,0 +1,9 @@
+{
+  "name": "marketplace-create-product-upload-url",
+  "version": "1.0.0",
+  "description": "Create a presigned S3 upload URL for product images",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
