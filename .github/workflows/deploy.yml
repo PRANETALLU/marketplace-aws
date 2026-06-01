@@ -121,5 +121,5 @@ jobs:
           if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
           echo "=== API Endpoint ==="
           aws cloudformation describe-stacks --stack-name marketplace-api-$ENV_NAME --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --region ${{ env.AWS_REGION }} --output text || true
-          echo "=== Frontend URL ==="
+          echo "=== Frontend URL (CloudFront HTTPS) ==="
           aws cloudformation describe-stacks --stack-name marketplace-api-$ENV_NAME --query 'Stacks[0].Outputs[?OutputKey==`ClientWebsiteURL`].OutputValue' --region ${{ env.AWS_REGION }} --output text || true

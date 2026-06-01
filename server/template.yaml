@@ -114,19 +114,16 @@ Resources:
         - AttributeName: transactionId
           KeyType: HASH
 
-  # --- Client hosting (static website) ---
+  # --- Client hosting (private S3 + CloudFront) ---
   ClientHostingBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub marketplace-${EnvironmentName}-client-${AWS::AccountId}
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        RestrictPublicBuckets: false
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: index.html
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
 
   ClientHostingBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -135,11 +132,54 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: PublicReadGetObject
+          - Sid: AllowCloudFrontOAC
             Effect: Allow
-            Principal: "*"
+            Principal:
+              Service: cloudfront.amazonaws.com
             Action: s3:GetObject
             Resource: !Sub ${ClientHostingBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${ClientCDN}
+
+  ClientOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  ClientCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt ClientHostingBucket.RegionalDomainName
+            OriginAccessControlId: !Ref ClientOriginAccessControl
+            S3OriginConfig: {}
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
 
   ProductImagesBucket:
     Type: AWS::S3::Bucket
@@ -617,8 +657,8 @@ Outputs:
     Value: !Ref TransactionsTable
 
   ClientWebsiteURL:
-    Description: S3 static website URL for the frontend
-    Value: !GetAtt ClientHostingBucket.WebsiteURL
+    Description: CloudFront HTTPS URL for the frontend
+    Value: !Sub https://${ClientCDN.DomainName}
 
   ClientHostingBucketName:
     Description: S3 bucket that holds the built frontend assets
