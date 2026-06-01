@@ -100,12 +100,15 @@ jobs:
       - name: Deploy client to S3
         run: |
           ENV_NAME=production
+          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
 
-          if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then
-            ENV_NAME=staging
-          fi
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name marketplace-api-$ENV_NAME \
+            --query 'Stacks[0].Outputs[?OutputKey==`ClientHostingBucketName`].OutputValue' \
+            --output text \
+            --region ${{ env.AWS_REGION }})
 
-          BUCKET_NAME="marketplace-${ENV_NAME}-123"
+          echo "Syncing to bucket: $BUCKET_NAME"
 
           aws s3 sync client/my-app/dist/ s3://$BUCKET_NAME \
             --delete \

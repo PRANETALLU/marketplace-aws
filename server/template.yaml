@@ -118,7 +118,7 @@ Resources:
   ClientHostingBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub marketplace-${EnvironmentName}-123
+      BucketName: !Sub marketplace-${EnvironmentName}-client-${AWS::AccountId}
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         IgnorePublicAcls: false
