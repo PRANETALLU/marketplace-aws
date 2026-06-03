@@ -14,6 +14,8 @@ import {
 } from "react-bootstrap";
 import { getProductById } from "../services/products/api";
 import { getReviewsForProduct, createReviewForProduct } from "../services/reviews/api";
+import { addToCart } from "../services/carts/api";
+import { checkoutSingleItem } from "../services/payments/api";
 import { UserContext } from "../context/UserContext";
 
 const ProductDetails = () => {
@@ -29,6 +31,10 @@ const ProductDetails = () => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [qty, setQty] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
+  const [cartToast, setCartToast] = useState("");
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
@@ -72,6 +78,33 @@ const ProductDetails = () => {
       alert("❌ Failed to submit review. You can only review products you've purchased.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!user) return navigate("/login");
+    setAddingToCart(true);
+    try {
+      await addToCart({ productId, quantity: qty });
+      setCartToast("Added to cart!");
+      setTimeout(() => setCartToast(""), 3000);
+    } catch (err) {
+      setCartToast("Failed to add to cart.");
+      setTimeout(() => setCartToast(""), 3000);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!user) return navigate("/login");
+    setBuyingNow(true);
+    try {
+      const { url } = await checkoutSingleItem(productId, qty);
+      window.location.href = url;
+    } catch (err) {
+      alert("Checkout failed. Please try again.");
+      setBuyingNow(false);
     }
   };
 
@@ -585,21 +618,58 @@ const ProductDetails = () => {
 
                   {/* Action Buttons */}
                   <div className="mt-auto">
-                    <div className="d-flex flex-column flex-sm-row gap-3 mb-3">
-                      <button 
-                        className="modern-action-btn flex-grow-1"
-                        disabled={product.quantity === 0}
-                      >
-                        Add to Cart
-                      </button>
-                      <button 
-                        className="modern-action-btn secondary flex-grow-1"
-                        disabled={product.quantity === 0}
-                      >
-                        Buy Now
-                      </button>
-                    </div>
-                    
+                    {/* Quantity picker */}
+                    {!isOwner && product.quantity > 0 && (
+                      <div className="d-flex align-items-center gap-3 mb-3">
+                        <span style={{ fontWeight: 600, color: '#475569', fontSize: '0.95rem' }}>Qty:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f1f5f9', borderRadius: '10px', padding: '0.25rem 0.5rem' }}>
+                          <button
+                            onClick={() => setQty(q => Math.max(1, q - 1))}
+                            disabled={qty <= 1}
+                            style={{ background: 'none', border: 'none', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer', color: '#0d6efd', lineHeight: 1, padding: '0 0.25rem' }}
+                          >−</button>
+                          <span style={{ fontWeight: 700, minWidth: '1.5rem', textAlign: 'center', fontSize: '1rem' }}>{qty}</span>
+                          <button
+                            onClick={() => setQty(q => Math.min(product.quantity, q + 1))}
+                            disabled={qty >= product.quantity}
+                            style={{ background: 'none', border: 'none', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer', color: '#0d6efd', lineHeight: 1, padding: '0 0.25rem' }}
+                          >+</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cart feedback toast */}
+                    {cartToast && (
+                      <div style={{
+                        background: cartToast.startsWith("Failed") ? '#fef2f2' : '#f0fdf4',
+                        border: `1.5px solid ${cartToast.startsWith("Failed") ? '#fca5a5' : '#86efac'}`,
+                        color: cartToast.startsWith("Failed") ? '#dc2626' : '#16a34a',
+                        borderRadius: '10px', padding: '0.6rem 1rem', fontSize: '0.9rem',
+                        fontWeight: 600, marginBottom: '0.75rem'
+                      }}>
+                        {cartToast}
+                      </div>
+                    )}
+
+                    {!isOwner && (
+                      <div className="d-flex flex-column flex-sm-row gap-3 mb-3">
+                        <button
+                          className="modern-action-btn flex-grow-1"
+                          disabled={product.quantity === 0 || addingToCart}
+                          onClick={handleAddToCart}
+                        >
+                          {addingToCart ? "Adding…" : product.quantity === 0 ? "Out of Stock" : "Add to Cart"}
+                        </button>
+                        <button
+                          className="modern-action-btn secondary flex-grow-1"
+                          disabled={product.quantity === 0 || buyingNow}
+                          onClick={handleBuyNow}
+                        >
+                          {buyingNow ? "Redirecting…" : product.quantity === 0 ? "Out of Stock" : "Buy Now"}
+                        </button>
+                      </div>
+                    )}
+
                     <div className="d-flex flex-column flex-sm-row gap-3">
                       {isOwner && (
                         <Link 
