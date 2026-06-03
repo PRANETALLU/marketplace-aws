@@ -30,7 +30,7 @@ confirm_changeset = false
 fail_on_empty_changeset = false
 resolve_s3 = true
 region = "us-east-1"
-parameter_overrides = "EnvironmentName=staging"
+parameter_overrides = "EnvironmentName=staging CognitoUserPoolId=us-east-1_U0xBV5wwQ"
 
 [production.global.parameters]
 stack_name = "marketplace-api-production"

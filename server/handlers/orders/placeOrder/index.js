@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const ORDERS_TABLE = process.env.ORDERS_TABLE || "OrdersTable";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,14 +14,22 @@ const response = (statusCode, body) => ({
   body: JSON.stringify(body),
 });
 
-// ✅ PLACE ORDER
+const getClaims = (event) => {
+  const c = event.requestContext?.authorizer?.claims;
+  if (c) return c;
+  const auth = event.headers?.Authorization || event.headers?.authorization || "";
+  if (!auth.startsWith("Bearer ")) return null;
+  try {
+    return JSON.parse(Buffer.from(auth.split(".")[1], "base64url").toString("utf8"));
+  } catch { return null; }
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders, body: "" };
   }
 
-  const claims = event.requestContext.authorizer?.claims;
-  const buyerId = claims?.sub;
+  const buyerId = getClaims(event)?.sub;
   if (!buyerId) return response(401, { message: "Unauthorized" });
 
   const { productId, quantity, totalPrice, shippingAddress } = JSON.parse(event.body);
@@ -33,9 +42,9 @@ exports.handler = async (event) => {
     totalPrice,
     orderDate: new Date().toISOString(),
     status: "pending",
-    shippingAddress
+    shippingAddress,
   };
 
-  await db.put({ TableName: "OrdersTable", Item: order }).promise();
+  await db.put({ TableName: ORDERS_TABLE, Item: order }).promise();
   return response(201, { message: "Order placed", order });
 };

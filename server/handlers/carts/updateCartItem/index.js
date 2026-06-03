@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const CARTS_TABLE = process.env.CARTS_TABLE || "CartsTable";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,11 +9,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "PUT,OPTIONS",
 };
 
-const res = (code, body) => ({
-  statusCode: code,
-  headers: corsHeaders,
-  body: JSON.stringify(body)
-});
+const res = (code, body) => ({ statusCode: code, headers: corsHeaders, body: JSON.stringify(body) });
+
+const getClaims = (event) => {
+  const c = event.requestContext?.authorizer?.claims;
+  if (c) return c;
+  const auth = event.headers?.Authorization || event.headers?.authorization || "";
+  if (!auth.startsWith("Bearer ")) return null;
+  try {
+    return JSON.parse(Buffer.from(auth.split(".")[1], "base64url").toString("utf8"));
+  } catch { return null; }
+};
 
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
@@ -20,7 +27,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const userId = event.requestContext?.authorizer?.claims?.sub;
+    const userId = getClaims(event)?.sub;
     if (!userId) return res(401, { message: "Unauthorized" });
 
     const productId = event.pathParameters?.productId;
@@ -31,37 +38,21 @@ exports.handler = async (event) => {
       return res(400, { message: "`quantity` (>=1) is required in body." });
     }
 
-    // Fetch the cart
-    const cartResult = await db.get({
-      TableName: "CartsTable",
-      Key: { userId }
-    }).promise();
-
+    const cartResult = await db.get({ TableName: CARTS_TABLE, Key: { userId } }).promise();
     const cart = cartResult.Item;
     if (!cart) return res(404, { message: "Cart not found" });
 
-    // Find item and update quantity
-    const updatedItems = (cart.items || []).map(item => {
-      if (item.productId === productId) {
-        return { ...item, quantity };
-      }
-      return item;
-    });
+    const updatedItems = (cart.items || []).map(item =>
+      item.productId === productId ? { ...item, quantity } : item
+    );
 
-    // Update the cart in DB
     await db.update({
-      TableName: "CartsTable",
+      TableName: CARTS_TABLE,
       Key: { userId },
       UpdateExpression: "SET #items = :items, updatedAt = :updatedAt",
-      ExpressionAttributeNames: {
-        "#items": "items"
-      },
-      ExpressionAttributeValues: {
-        ":items": updatedItems,
-        ":updatedAt": new Date().toISOString(),
-      }
+      ExpressionAttributeNames: { "#items": "items" },
+      ExpressionAttributeValues: { ":items": updatedItems, ":updatedAt": new Date().toISOString() },
     }).promise();
-
 
     return res(200, { userId, items: updatedItems });
   } catch (err) {

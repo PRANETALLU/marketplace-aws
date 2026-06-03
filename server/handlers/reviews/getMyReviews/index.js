@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const REVIEWS_TABLE = process.env.REVIEWS_TABLE || "ReviewsTable";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,30 +14,32 @@ const response = (status, body) => ({
   body: JSON.stringify(body),
 });
 
+const getClaims = (event) => {
+  const c = event.requestContext?.authorizer?.claims;
+  if (c) return c;
+  const auth = event.headers?.Authorization || event.headers?.authorization || "";
+  if (!auth.startsWith("Bearer ")) return null;
+  try {
+    return JSON.parse(Buffer.from(auth.split(".")[1], "base64url").toString("utf8"));
+  } catch { return null; }
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders, body: "" };
   }
 
   try {
-    const claims = event.requestContext?.authorizer?.claims;
-    const buyerId = claims?.sub;
+    const buyerId = getClaims(event)?.sub;
+    if (!buyerId) return response(401, { message: "Unauthorized" });
 
-    if (!buyerId) {
-      return response(401, { message: "Unauthorized" });
-    }
-
-    // Scan Reviews table for reviews by this user
     const result = await db.scan({
-      TableName: "ReviewsTable",
+      TableName: REVIEWS_TABLE,
       FilterExpression: "buyerId = :bid",
-      ExpressionAttributeValues: {
-        ":bid": buyerId,
-      },
+      ExpressionAttributeValues: { ":bid": buyerId },
     }).promise();
 
     return response(200, result.Items || []);
-
   } catch (err) {
     console.error("Error fetching user reviews:", err);
     return response(500, { message: "Internal server error." });

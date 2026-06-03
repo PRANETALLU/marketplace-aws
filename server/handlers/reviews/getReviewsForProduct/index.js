@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const REVIEWS_TABLE = process.env.REVIEWS_TABLE || "ReviewsTable";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,11 +14,8 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers: corsHeaders, body: "" };
   }
 
-  console.log("Full Event", event);
-
   try {
     const productId = event.pathParameters?.productId;
-
     if (!productId) {
       return {
         statusCode: 400,
@@ -26,15 +24,11 @@ exports.handler = async (event) => {
       };
     }
 
-    const result = await db
-      .scan({
-        TableName: "ReviewsTable",
-        FilterExpression: "productId = :pid",
-        ExpressionAttributeValues: {
-          ":pid": productId,
-        },
-      })
-      .promise();
+    const result = await db.scan({
+      TableName: REVIEWS_TABLE,
+      FilterExpression: "productId = :pid",
+      ExpressionAttributeValues: { ":pid": productId },
+    }).promise();
 
     return {
       statusCode: 200,

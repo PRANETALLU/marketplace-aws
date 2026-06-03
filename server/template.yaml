@@ -14,6 +14,10 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: Stripe secret key for checkout Lambdas (use test key for staging, live for production).
+  CognitoUserPoolId:
+    Type: String
+    Default: ""
+    Description: Cognito User Pool ID used to validate JWT tokens at the API Gateway level.
 
 Mappings:
   EnvironmentConfig:
@@ -235,6 +239,12 @@ Resources:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
         AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
 
   Default4xxGatewayResponse:
     Type: AWS::ApiGateway::GatewayResponse
@@ -272,6 +282,8 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /products
             Method: GET
+            Auth:
+              Authorizer: NONE
 
   GetProductsBySellerFunction:
     Type: AWS::Serverless::Function
@@ -304,6 +316,8 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /products/{productId}
             Method: GET
+            Auth:
+              Authorizer: NONE
 
   CreateProductUploadUrlFunction:
     Type: AWS::Serverless::Function
@@ -533,6 +547,8 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /reviews/{productId}
             Method: GET
+            Auth:
+              Authorizer: NONE
 
   CreateReviewForProductFunction:
     Type: AWS::Serverless::Function

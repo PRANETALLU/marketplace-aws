@@ -1,5 +1,7 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const ORDERS_TABLE = process.env.ORDERS_TABLE || "OrdersTable";
+const REVIEWS_TABLE = process.env.REVIEWS_TABLE || "ReviewsTable";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,39 +15,35 @@ const response = (status, body) => ({
   body: JSON.stringify(body),
 });
 
+const getClaims = (event) => {
+  const c = event.requestContext?.authorizer?.claims;
+  if (c) return c;
+  const auth = event.headers?.Authorization || event.headers?.authorization || "";
+  if (!auth.startsWith("Bearer ")) return null;
+  try {
+    return JSON.parse(Buffer.from(auth.split(".")[1], "base64url").toString("utf8"));
+  } catch { return null; }
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders, body: "" };
   }
 
   try {
-    // 1. Authenticate user
-    const claims = event.requestContext?.authorizer?.claims;
-    const buyerId = claims?.sub;
-    if (!buyerId) {
-      return response(401, { message: "Unauthorized" });
-    }
+    const buyerId = getClaims(event)?.sub;
+    if (!buyerId) return response(401, { message: "Unauthorized" });
 
-    // 2. Extract productId from path parameter
     const productId = event.pathParameters?.productId;
-    if (!productId) {
-      return response(400, { message: "`productId` path parameter is required." });
-    }
+    if (!productId) return response(400, { message: "`productId` path parameter is required." });
 
-    // 3. Parse input body
     const { rating, comment = "" } = JSON.parse(event.body || "{}");
-    if (rating === undefined) {
-      return response(400, { message: "`rating` is required in the request body." });
-    }
+    if (rating === undefined) return response(400, { message: "`rating` is required in the request body." });
 
-    // 4. Verify user has purchased the product
     const orderScan = await db.scan({
-      TableName: "OrdersTable",
+      TableName: ORDERS_TABLE,
       FilterExpression: "buyerId = :buyerId AND productId = :productId",
-      ExpressionAttributeValues: {
-        ":buyerId": buyerId,
-        ":productId": productId,
-      },
+      ExpressionAttributeValues: { ":buyerId": buyerId, ":productId": productId },
       ProjectionExpression: "orderId",
     }).promise();
 
@@ -53,7 +51,6 @@ exports.handler = async (event) => {
       return response(403, { message: "You can only review products you have purchased." });
     }
 
-    // 5. Create and save the review
     const review = {
       reviewId: `review_${Date.now()}`,
       productId,
@@ -63,13 +60,8 @@ exports.handler = async (event) => {
       createdAt: new Date().toISOString(),
     };
 
-    await db.put({
-      TableName: "ReviewsTable",
-      Item: review,
-    }).promise();
-
+    await db.put({ TableName: REVIEWS_TABLE, Item: review }).promise();
     return response(201, review);
-
   } catch (err) {
     console.error("Error creating review:", err);
     return response(500, { message: "Internal server error." });
