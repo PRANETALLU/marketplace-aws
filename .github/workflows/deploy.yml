@@ -123,6 +123,21 @@ jobs:
           echo "Sync complete. Object count:"
           aws s3 ls s3://$BUCKET_NAME --recursive --summarize --region ${{ env.AWS_REGION }} | tail -2
 
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name marketplace-api-$ENV_NAME \
+            --query 'Stacks[0].Outputs[?OutputKey==`ClientCDNDistributionId`].OutputValue' \
+            --output text \
+            --region ${{ env.AWS_REGION }})
+
+          if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            echo "Invalidating CloudFront cache for distribution: $DISTRIBUTION_ID"
+            aws cloudfront create-invalidation \
+              --distribution-id "$DISTRIBUTION_ID" \
+              --paths "/*"
+          else
+            echo "No CloudFront distribution ID found, skipping invalidation"
+          fi
+
       - name: Print deployment URLs
         run: |
           ENV_NAME=production

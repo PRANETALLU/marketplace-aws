@@ -660,6 +660,10 @@ Outputs:
     Description: CloudFront HTTPS URL for the frontend
     Value: !Sub https://${ClientCDN.DomainName}
 
+  ClientCDNDistributionId:
+    Description: CloudFront distribution ID (used for cache invalidation)
+    Value: !Ref ClientCDN
+
   ClientHostingBucketName:
     Description: S3 bucket that holds the built frontend assets
     Value: !Ref ClientHostingBucket
