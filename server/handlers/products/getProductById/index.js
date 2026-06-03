@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,21 +15,9 @@ exports.handler = async (event) => {
   }
 
   console.log('Full Event', event);
-  const claims = event.requestContext.authorizer?.claims;
-  console.log('claims', claims);
-  const userId = claims?.sub;
-  console.log('UserID', event);
-
-  if (!userId) {
-    return {
-      statusCode: 401,
-      headers: corsHeaders,
-      body: JSON.stringify({ message: "Unauthorized" }),
-    };
-  }
 
   const { productId } = event.pathParameters;
-  const result = await db.get({ TableName: "ProductsTable", Key: { productId } }).promise();
+  const result = await db.get({ TableName: PRODUCTS_TABLE, Key: { productId } }).promise();
 
   console.log('Fetched item:', result);
 

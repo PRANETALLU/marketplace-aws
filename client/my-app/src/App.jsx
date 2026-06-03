@@ -6,6 +6,7 @@ import Welcome from "./pages/Welcome";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import ProductDetails from "./pages/ProductDetails";
+import EditProduct from "./pages/EditProduct";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/product/:productId" element={<ProductDetails />} />
+        <Route path="/edit-product/:productId" element={<ProtectedRoute><EditProduct /></ProtectedRoute>} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-cancel" element={<PaymentCancel />} />
 
