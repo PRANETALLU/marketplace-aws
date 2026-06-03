@@ -34,7 +34,7 @@ const Home = () => {
         {/* Page header */}
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
           <div>
-            <h1 className="page-heading">Marketplace</h1>
+            <h1 className="page-heading">Tradenest</h1>
             <p className="page-subheading">Discover {products.length} products from independent sellers</p>
           </div>
           {user && (

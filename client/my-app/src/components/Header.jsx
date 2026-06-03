@@ -242,7 +242,7 @@ const Header = () => {
         <div className="mp-nav-inner">
           <Link to={user ? "/home" : "/"} className="mp-brand">
             <div className="mp-brand-icon">🛍️</div>
-            <span className="mp-brand-name">Marketplace</span>
+            <span className="mp-brand-name">Tradenest</span>
           </Link>
 
           {user && (

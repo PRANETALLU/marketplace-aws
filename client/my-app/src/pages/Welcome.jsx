@@ -313,8 +313,8 @@ const Welcome = () => {
               </div>
             )}
             <h1 className="hero-title">
-              The marketplace built for<br />
-              <span>independent sellers</span>
+            Tradenest — the marketplace<br />
+            <span>built for independent sellers</span>
             </h1>
             <p className="hero-subtitle">
               List products, reach buyers, and process payments securely —
@@ -374,7 +374,7 @@ const Welcome = () => {
 
         {/* Footer */}
         <footer className="welcome-footer">
-          Built with React · AWS Lambda · DynamoDB · S3 · API Gateway · Cognito · Stripe
+          Tradenest · Built with React · AWS Lambda · DynamoDB · S3 · API Gateway · Cognito · Stripe
         </footer>
       </div>
     </>
