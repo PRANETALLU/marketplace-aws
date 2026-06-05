@@ -9,8 +9,8 @@ build/
 dist/
 
 # Environment files (if they contain sensitive data)
-# env/.local.env
-# env/.test.env
+env/.local.env
+env/.test.env
 
 # IDE
 .vscode/

@@ -92,8 +92,14 @@ jobs:
           sam build
           ENV_NAME=production
           if [ "${GITHUB_REF#refs/heads/}" = "staging" ]; then ENV_NAME=staging; fi
-          # deploy without passing sensitive parameters here; configure via samconfig or Parameter Store
-          sam deploy --config-env $ENV_NAME --no-confirm-changeset --no-fail-on-empty-changeset
+          # Inject Stripe key from GitHub secret at deploy time (never stored in samconfig.toml)
+          if [ "$ENV_NAME" = "staging" ]; then
+            STRIPE_KEY="${{ secrets.STAGING_STRIPE_SECRET_KEY }}"
+          else
+            STRIPE_KEY="${{ secrets.PRODUCTION_STRIPE_SECRET_KEY }}"
+          fi
+          sam deploy --config-env $ENV_NAME --no-confirm-changeset --no-fail-on-empty-changeset \
+            --parameter-overrides "StripeSecretKey=$STRIPE_KEY"
 
       - name: Deploy client to S3
         run: |
