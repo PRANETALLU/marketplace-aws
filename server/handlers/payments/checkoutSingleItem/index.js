@@ -36,6 +36,11 @@ exports.handler = async (event) => {
       return response(404, { error: "Product not found" });
     }
 
+    const unit_amount = Math.round((product.price || 0) * 100);
+    if (unit_amount < 50) {
+      return response(400, { error: "Product price must be at least $0.50 to check out" });
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
@@ -43,7 +48,7 @@ exports.handler = async (event) => {
         {
           price_data: {
             currency: "usd",
-            unit_amount: Math.round(product.price * 100),
+            unit_amount,
             product_data: {
               name: product.productName || product.title,
               description: product.description,

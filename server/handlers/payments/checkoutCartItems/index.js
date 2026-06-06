@@ -36,10 +36,13 @@ exports.handler = async (event) => {
       const product = productResult.Item;
       if (!product) continue;
 
+      const unit_amount = Math.round((product.price || 0) * 100);
+      if (unit_amount < 50) continue; // Stripe minimum is $0.50
+
       line_items.push({
         price_data: {
           currency: "usd",
-          unit_amount: Math.round(product.price * 100),
+          unit_amount,
           product_data: {
             name: product.productName || product.title,
             description: product.description,
