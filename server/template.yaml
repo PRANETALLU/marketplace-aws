@@ -14,6 +14,10 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: Stripe secret key for checkout Lambdas (use test key for staging, live for production).
+  ClientUrl:
+    Type: String
+    Default: ""
+    Description: Frontend base URL used for Stripe success/cancel redirects (e.g. https://xxxx.cloudfront.net).
   CognitoUserPoolId:
     Type: String
     Default: ""
@@ -610,6 +614,7 @@ Resources:
       Environment:
         Variables:
           STRIPE_SECRET_KEY: !Ref StripeSecretKey
+          CLIENT_URL: !Ref ClientUrl
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ProductsTable
@@ -629,6 +634,7 @@ Resources:
       Environment:
         Variables:
           STRIPE_SECRET_KEY: !Ref StripeSecretKey
+          CLIENT_URL: !Ref ClientUrl
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ProductsTable

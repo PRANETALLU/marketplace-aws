@@ -1,4 +1,5 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
@@ -51,13 +52,13 @@ exports.handler = async (event) => {
           quantity,
         },
       ],
-      success_url: "https://yourdomain.com/success",
-      cancel_url: "https://yourdomain.com/cancel",
+      success_url: `${CLIENT_URL}/success`,
+      cancel_url: `${CLIENT_URL}/cart`,
     });
 
     return response(200, { url: session.url });
   } catch (err) {
-    console.error("Error:", err);
-    return response(500, { error: "Failed to create Stripe session" });
+    console.error("Stripe error:", err);
+    return response(500, { error: "Failed to create Stripe session", detail: err.message });
   }
 };

@@ -1,5 +1,5 @@
 # Deploy: sam deploy --config-env staging   OR   sam deploy --config-env production
-# Edit parameter_overrides below with environment-specific values (add StripeSecretKey=... when ready).
+# Sensitive values (StripeSecretKey, ClientUrl) are injected via --parameter-overrides in deploy.yml from GitHub secrets.
 version = 0.1
 
 [default]
