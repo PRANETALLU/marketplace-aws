@@ -102,7 +102,7 @@ exports.handler = async (event) => {
       payment_method_types: ["card"],
       mode: "payment",
       line_items,
-      success_url: `${CLIENT_URL}/success`,
+      success_url: `${CLIENT_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${CLIENT_URL}/cart`,
       metadata: {
         buyerId: claims?.sub || "",

@@ -1,13 +1,32 @@
 import { useLocation, Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getOrdersPlaced } from "../services/orders/api";
 
 const PaymentSuccess = () => {
   const location = useLocation();
-  const orderId = new URLSearchParams(location.search).get("orderId");
+  const sessionId = new URLSearchParams(location.search).get("session_id");
+  const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    console.log("Payment succeeded for order:", orderId);
-  }, [orderId]);
+    if (!sessionId) return;
+    // Poll briefly for the order — webhook may take a second or two
+    let attempts = 0;
+    const poll = async () => {
+      try {
+        const orders = await getOrdersPlaced();
+        const match = orders.find((o) => o.stripeSessionId === sessionId);
+        if (match) {
+          setOrder(match);
+        } else if (attempts < 5) {
+          attempts++;
+          setTimeout(poll, 1500);
+        }
+      } catch {
+        // silently ignore — user can still navigate to /orders
+      }
+    };
+    poll();
+  }, [sessionId]);
 
   return (
     <div className="page-wrapper">
@@ -20,20 +39,26 @@ const PaymentSuccess = () => {
           <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
             Thank you for your purchase. Your order has been placed.
           </p>
-          {orderId && (
+
+          {order ? (
             <div style={{
-              display: "inline-block",
               background: "var(--success-light)",
               color: "var(--success)",
               borderRadius: 10,
-              padding: "0.5rem 1.25rem",
+              padding: "0.75rem 1.25rem",
               fontWeight: 700,
               fontSize: "0.875rem",
               marginBottom: "2rem",
+              display: "inline-block",
             }}>
-              Order ID: {orderId}
+              Order #{order.orderId} &mdash; ${Number(order.totalAmount).toFixed(2)}
             </div>
-          )}
+          ) : sessionId ? (
+            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "2rem" }}>
+              Your order is being confirmed&hellip;
+            </p>
+          ) : null}
+
           <div className="d-flex gap-3 justify-content-center flex-wrap">
             <Link to="/orders" className="btn-primary-mp">View My Orders</Link>
             <Link to="/home" className="btn-outline-mp">Continue Shopping</Link>

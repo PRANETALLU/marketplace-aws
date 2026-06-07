@@ -29,10 +29,12 @@ exports.handler = async (event) => {
     const buyerId = getClaims(event)?.sub;
     if (!buyerId) return res(401, { message: "Unauthorized" });
 
-    const data = await db.scan({
+    const data = await db.query({
       TableName: TRANSACTIONS_TABLE,
-      FilterExpression: "buyerId = :id",
+      IndexName: "buyerId-index",
+      KeyConditionExpression: "buyerId = :id",
       ExpressionAttributeValues: { ":id": buyerId },
+      ScanIndexForward: false, // newest first
     }).promise();
 
     return res(200, data.Items || []);

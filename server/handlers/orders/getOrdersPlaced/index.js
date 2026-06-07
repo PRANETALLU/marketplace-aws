@@ -43,25 +43,27 @@ exports.handler = async (event) => {
   }
 
   try {
-    const result = await db.scan({
+    const result = await db.query({
       TableName: ORDERS_TABLE,
-      FilterExpression: "buyerId = :buyerId",
+      IndexName: "buyerId-index",
+      KeyConditionExpression: "buyerId = :buyerId",
       ExpressionAttributeValues: {
-        ":buyerId": buyerId
-      }
+        ":buyerId": buyerId,
+      },
+      ScanIndexForward: false, // newest first
     }).promise();
 
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(result.Items)
+      body: JSON.stringify(result.Items),
     };
   } catch (error) {
     console.error("Error querying orders:", error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ message: "Internal Server Error" })
+      body: JSON.stringify({ message: "Internal Server Error" }),
     };
   }
 };

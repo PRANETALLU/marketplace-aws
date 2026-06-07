@@ -103,9 +103,18 @@ Resources:
       AttributeDefinitions:
         - AttributeName: orderId
           AttributeType: S
+        - AttributeName: buyerId
+          AttributeType: S
       KeySchema:
         - AttributeName: orderId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: buyerId-index
+          KeySchema:
+            - AttributeName: buyerId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
 
   ReviewsTable:
     Type: AWS::DynamoDB::Table
@@ -127,9 +136,18 @@ Resources:
       AttributeDefinitions:
         - AttributeName: transactionId
           AttributeType: S
+        - AttributeName: buyerId
+          AttributeType: S
       KeySchema:
         - AttributeName: transactionId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: buyerId-index
+          KeySchema:
+            - AttributeName: buyerId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
 
   # --- Client hosting (private S3 + CloudFront) ---
   ClientHostingBucket:
@@ -677,11 +695,17 @@ Resources:
           SES_FROM_EMAIL: !Ref SesFromEmail
           PRODUCTS_TABLE: !Ref ProductsTable
           CARTS_TABLE: !Ref CartsTable
+          ORDERS_TABLE: !Ref OrdersTable
+          TRANSACTIONS_TABLE: !Ref TransactionsTable
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref CartsTable
         - DynamoDBWritePolicy:
             TableName: !Ref ProductsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref OrdersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref TransactionsTable
         - Statement:
             - Effect: Allow
               Action:

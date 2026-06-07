@@ -1,9 +1,12 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const AWS = require("aws-sdk");
+const { v4: uuidv4 } = require("uuid");
 const ses = new AWS.SES({ region: process.env.AWS_REGION || "us-east-1" });
 const db = new AWS.DynamoDB.DocumentClient();
 const CARTS_TABLE = process.env.CARTS_TABLE || "CartsTable";
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
+const ORDERS_TABLE = process.env.ORDERS_TABLE || "OrdersTable";
+const TRANSACTIONS_TABLE = process.env.TRANSACTIONS_TABLE || "TransactionsTable";
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL || "";
@@ -60,15 +63,18 @@ exports.handler = async (event) => {
     }
   }
 
-  // Decrement product quantities
+  // Parse purchased items once — used for both stock decrement and order record
+  let purchasedItems = [];
   if (itemsJson) {
-    let purchasedItems = [];
     try {
       purchasedItems = JSON.parse(itemsJson);
     } catch (err) {
       console.error("Failed to parse items metadata:", err.message);
     }
+  }
 
+  // Decrement product quantities
+  if (purchasedItems.length > 0) {
     await Promise.all(
       purchasedItems.map(({ p: productId, q: qty }) =>
         db.update({
@@ -87,6 +93,55 @@ exports.handler = async (event) => {
       )
     );
     console.log("Product quantities decremented for items:", purchasedItems);
+  }
+
+  // Create order record
+  const orderId = `order_${uuidv4()}`;
+  const now = new Date().toISOString();
+  const orderItems = purchasedItems.map(({ p, q }) => ({ productId: p, quantity: q }));
+
+  try {
+    await db.put({
+      TableName: ORDERS_TABLE,
+      Item: {
+        orderId,
+        buyerId: buyerId || "",
+        buyerEmail: buyerEmail || "",
+        items: orderItems,
+        totalAmount: (session.amount_total || 0) / 100,
+        currency: session.currency || "usd",
+        status: "paid",
+        stripeSessionId: session.id,
+        description: description || "",
+        createdAt: now,
+        updatedAt: now,
+      },
+    }).promise();
+    console.log("Order created:", orderId);
+  } catch (err) {
+    console.error("Failed to create order:", err.message);
+  }
+
+  // Create transaction record
+  try {
+    await db.put({
+      TableName: TRANSACTIONS_TABLE,
+      Item: {
+        transactionId: `txn_${session.id}`,
+        buyerId: buyerId || "",
+        buyerEmail: buyerEmail || "",
+        orderId,
+        amount: (session.amount_total || 0) / 100,
+        currency: session.currency || "usd",
+        stripeSessionId: session.id,
+        description: description || "",
+        status: "completed",
+        createdAt: now,
+      },
+    }).promise();
+    console.log("Transaction created for session:", session.id);
+  } catch (err) {
+    console.error("Failed to create transaction:", err.message);
   }
 
   const emailJobs = [];
