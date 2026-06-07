@@ -1,5 +1,6 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const rawClientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+const CLIENT_URL = /^https?:\/\//i.test(rawClientUrl) ? rawClientUrl : `https://${rawClientUrl}`;
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
 const cognito = new AWS.CognitoIdentityServiceProvider();
