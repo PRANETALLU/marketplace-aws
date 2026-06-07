@@ -33,6 +33,57 @@ const FEATURES = [
   },
 ];
 
+const AWS_SERVICES = [
+  {
+    icon: "⚡",
+    name: "AWS Lambda",
+    category: "Compute",
+    desc: "Every API endpoint runs as its own serverless function — no servers to manage, scales automatically.",
+  },
+  {
+    icon: "🚪",
+    name: "API Gateway",
+    category: "API",
+    desc: "Single entry point for all API calls. Routes requests to Lambda, enforces auth, and handles CORS.",
+  },
+  {
+    icon: "🗄️",
+    name: "DynamoDB",
+    category: "Database",
+    desc: "NoSQL database with 5 tables: Products, Carts, Orders, Transactions, and Reviews.",
+  },
+  {
+    icon: "🪣",
+    name: "S3",
+    category: "Storage",
+    desc: "Two buckets — one for product image uploads, one for hosting the built React frontend.",
+  },
+  {
+    icon: "🌐",
+    name: "CloudFront",
+    category: "CDN",
+    desc: "Serves the React app globally over HTTPS with edge caching and automatic cache invalidation on deploy.",
+  },
+  {
+    icon: "🔑",
+    name: "Cognito",
+    category: "Auth",
+    desc: "Manages user sign-up, login, and JWT tokens. API Gateway verifies every protected request automatically.",
+  },
+  {
+    icon: "📧",
+    name: "SES",
+    category: "Email",
+    desc: "Sends payment confirmation emails to buyers and sale notifications to sellers after checkout.",
+  },
+  {
+    icon: "🏗️",
+    name: "CloudFormation / SAM",
+    category: "Infrastructure",
+    desc: "All resources defined as code in template.yaml. One command deploys the entire stack.",
+  },
+];
+
 const Welcome = () => {
   const env = import.meta.env.VITE_ENVIRONMENT;
 
@@ -266,6 +317,89 @@ const Welcome = () => {
           margin: 0;
         }
 
+        /* --- AWS section --- */
+        .aws-section {
+          padding: 4rem 1.5rem;
+          background: var(--surface);
+          border-top: 1px solid var(--border);
+          border-bottom: 1px solid var(--border);
+        }
+        .aws-section-inner {
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+        .aws-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          background: #fff3e0;
+          color: #e65100;
+          border: 1px solid #ffcc80;
+          border-radius: 999px;
+          padding: 0.25rem 0.85rem;
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          margin-bottom: 0.6rem;
+        }
+        .aws-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 1rem;
+          margin-top: 2.5rem;
+        }
+        .aws-card {
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: 1.25rem 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+        }
+        .aws-card:hover {
+          box-shadow: var(--shadow-md);
+          transform: translateY(-2px);
+          border-color: #ff9900;
+        }
+        .aws-card-header {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+        }
+        .aws-icon {
+          width: 36px;
+          height: 36px;
+          background: #fff3e0;
+          border-radius: var(--radius);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.1rem;
+          flex-shrink: 0;
+        }
+        .aws-name {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: var(--text);
+          line-height: 1.2;
+        }
+        .aws-category {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: #e65100;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .aws-desc {
+          font-size: 0.82rem;
+          color: var(--text-muted);
+          line-height: 1.55;
+          margin: 0;
+        }
+
         /* --- CTA strip --- */
         .cta-strip {
           background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
@@ -362,6 +496,33 @@ const Welcome = () => {
           </div>
         </section>
 
+        {/* AWS Infrastructure */}
+        <section className="aws-section">
+          <div className="aws-section-inner">
+            <div style={{ textAlign: "center" }}>
+              <div className="aws-badge">☁️ AWS Infrastructure</div>
+              <h2 className="features-heading">Powered by Amazon Web Services</h2>
+              <p className="features-subheading">
+                Every layer of the stack runs on AWS managed services — zero servers to provision or maintain.
+              </p>
+            </div>
+            <div className="aws-grid">
+              {AWS_SERVICES.map((s) => (
+                <div key={s.name} className="aws-card">
+                  <div className="aws-card-header">
+                    <div className="aws-icon">{s.icon}</div>
+                    <div>
+                      <div className="aws-name">{s.name}</div>
+                      <div className="aws-category">{s.category}</div>
+                    </div>
+                  </div>
+                  <p className="aws-desc">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="cta-strip">
           <h2>Ready to start selling?</h2>
@@ -374,7 +535,7 @@ const Welcome = () => {
 
         {/* Footer */}
         <footer className="welcome-footer">
-          Tradenest · Built with React · AWS Lambda · DynamoDB · S3 · API Gateway · Cognito · Stripe
+          Tradenest · Built with React · AWS Lambda · API Gateway · DynamoDB · S3 · CloudFront · Cognito · SES · Stripe
         </footer>
       </div>
     </>
