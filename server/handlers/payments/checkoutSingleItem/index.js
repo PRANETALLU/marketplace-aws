@@ -103,6 +103,7 @@ exports.handler = async (event) => {
         buyerEmail: buyerEmail || "",
         sellerEmails: sellerEmail ? JSON.stringify([sellerEmail]) : "[]",
         description: `${productName} x${quantity}`,
+        items: JSON.stringify([{ p: productId, q: quantity }]),
       },
     });
 

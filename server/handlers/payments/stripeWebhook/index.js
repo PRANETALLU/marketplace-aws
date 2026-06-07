@@ -3,6 +3,7 @@ const AWS = require("aws-sdk");
 const ses = new AWS.SES({ region: process.env.AWS_REGION || "us-east-1" });
 const db = new AWS.DynamoDB.DocumentClient();
 const CARTS_TABLE = process.env.CARTS_TABLE || "CartsTable";
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL || "";
@@ -37,7 +38,7 @@ exports.handler = async (event) => {
   }
 
   const session = stripeEvent.data.object;
-  const { buyerId, buyerEmail, sellerEmails: sellerEmailsJson, description } = session.metadata || {};
+  const { buyerId, buyerEmail, sellerEmails: sellerEmailsJson, description, items: itemsJson } = session.metadata || {};
   const total = formatAmount(session.amount_total || 0);
   const sellerEmails = sellerEmailsJson ? JSON.parse(sellerEmailsJson) : [];
 
@@ -57,6 +58,35 @@ exports.handler = async (event) => {
     } catch (err) {
       console.error("Failed to clear cart:", err.message);
     }
+  }
+
+  // Decrement product quantities
+  if (itemsJson) {
+    let purchasedItems = [];
+    try {
+      purchasedItems = JSON.parse(itemsJson);
+    } catch (err) {
+      console.error("Failed to parse items metadata:", err.message);
+    }
+
+    await Promise.all(
+      purchasedItems.map(({ p: productId, q: qty }) =>
+        db.update({
+          TableName: PRODUCTS_TABLE,
+          Key: { productId },
+          UpdateExpression: "SET quantity = if_not_exists(quantity, :zero) - :qty, updatedAt = :now",
+          ConditionExpression: "quantity >= :qty",
+          ExpressionAttributeValues: {
+            ":qty": qty,
+            ":zero": 0,
+            ":now": new Date().toISOString(),
+          },
+        }).promise().catch((err) => {
+          console.error(`Failed to decrement quantity for product ${productId}:`, err.message);
+        })
+      )
+    );
+    console.log("Product quantities decremented for items:", purchasedItems);
   }
 
   const emailJobs = [];

@@ -109,6 +109,11 @@ exports.handler = async (event) => {
         buyerEmail: buyerEmail || "",
         sellerEmails: JSON.stringify(sellerEmails),
         description: itemNames.join(", ").slice(0, 490), // Stripe metadata value limit: 500 chars
+        items: JSON.stringify(
+          cartItems
+            .filter((i) => i.productId)
+            .map((i) => ({ p: i.productId, q: i.quantity }))
+        ).slice(0, 500),
       },
     });
 

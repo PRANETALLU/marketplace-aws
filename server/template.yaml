@@ -675,9 +675,13 @@ Resources:
           STRIPE_SECRET_KEY: !Ref StripeSecretKey
           STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
           SES_FROM_EMAIL: !Ref SesFromEmail
+          PRODUCTS_TABLE: !Ref ProductsTable
+          CARTS_TABLE: !Ref CartsTable
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref CartsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref ProductsTable
         - Statement:
             - Effect: Allow
               Action:
