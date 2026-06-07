@@ -52,7 +52,13 @@ exports.handler = async (event) => {
     const claims = getClaims(event);
     const buyerEmail = claims?.email || null;
 
-    const { productId, quantity } = JSON.parse(event.body);
+    let parsedBody = {};
+    try {
+      parsedBody = JSON.parse(event.body || "{}");
+    } catch {
+      return response(400, { error: "Invalid request body" });
+    }
+    const { productId, quantity } = parsedBody;
 
     const productResult = await db.get({
       TableName: PRODUCTS_TABLE,
