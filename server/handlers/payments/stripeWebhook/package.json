@@ -1,0 +1,9 @@
+{
+  "name": "marketplace-stripe-webhook",
+  "version": "1.0.0",
+  "description": "Stripe webhook handler — sends SES emails to buyer and seller on payment completion",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

@@ -2,7 +2,9 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 const AWS = require("aws-sdk");
 const db = new AWS.DynamoDB.DocumentClient();
+const cognito = new AWS.CognitoIdentityServiceProvider();
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "ProductsTable";
+const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,15 +18,42 @@ const response = (statusCode, body) => ({
   body: JSON.stringify(body),
 });
 
+const getClaims = (event) => {
+  const c = event.requestContext?.authorizer?.claims;
+  if (c) return c;
+  const auth = event.headers?.Authorization || event.headers?.authorization || "";
+  if (!auth.startsWith("Bearer ")) return null;
+  try {
+    return JSON.parse(Buffer.from(auth.split(".")[1], "base64url").toString("utf8"));
+  } catch { return null; }
+};
+
+const getSellerEmail = async (sellerId) => {
+  if (!COGNITO_USER_POOL_ID || !sellerId) return null;
+  try {
+    const result = await cognito.listUsers({
+      UserPoolId: COGNITO_USER_POOL_ID,
+      Filter: `sub = "${sellerId}"`,
+      Limit: 1,
+    }).promise();
+    return result.Users[0]?.Attributes?.find((a) => a.Name === "email")?.Value || null;
+  } catch (err) {
+    console.warn("Could not fetch seller email:", err.message);
+    return null;
+  }
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders, body: "" };
   }
 
   try {
+    const claims = getClaims(event);
+    const buyerEmail = claims?.email || null;
+
     const { productId, quantity } = JSON.parse(event.body);
 
-    // Get product from DynamoDB
     const productResult = await db.get({
       TableName: PRODUCTS_TABLE,
       Key: { productId },
@@ -41,6 +70,9 @@ exports.handler = async (event) => {
       return response(400, { error: "Product price must be at least $0.50 to check out" });
     }
 
+    const productName = product.productName || product.title || "Item";
+    const sellerEmail = await getSellerEmail(product.sellerId);
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
@@ -50,7 +82,7 @@ exports.handler = async (event) => {
             currency: "usd",
             unit_amount,
             product_data: {
-              name: product.productName || product.title,
+              name: productName,
               description: product.description,
             },
           },
@@ -59,6 +91,12 @@ exports.handler = async (event) => {
       ],
       success_url: `${CLIENT_URL}/success`,
       cancel_url: `${CLIENT_URL}/cart`,
+      metadata: {
+        buyerId: claims?.sub || "",
+        buyerEmail: buyerEmail || "",
+        sellerEmails: sellerEmail ? JSON.stringify([sellerEmail]) : "[]",
+        description: `${productName} x${quantity}`,
+      },
     });
 
     return response(200, { url: session.url });

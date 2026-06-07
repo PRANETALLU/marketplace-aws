@@ -95,13 +95,17 @@ jobs:
           # Inject Stripe key from GitHub secret at deploy time (never stored in samconfig.toml)
           if [ "$ENV_NAME" = "staging" ]; then
             STRIPE_KEY="${{ secrets.STAGING_STRIPE_SECRET_KEY }}"
+            STRIPE_WEBHOOK_SECRET="${{ secrets.STAGING_STRIPE_WEBHOOK_SECRET }}"
             CLIENT_URL="${{ secrets.STAGING_CLIENT_URL }}"
+            SES_FROM_EMAIL="${{ secrets.STAGING_SES_FROM_EMAIL }}"
           else
             STRIPE_KEY="${{ secrets.PRODUCTION_STRIPE_SECRET_KEY }}"
+            STRIPE_WEBHOOK_SECRET="${{ secrets.PRODUCTION_STRIPE_WEBHOOK_SECRET }}"
             CLIENT_URL="${{ secrets.PRODUCTION_CLIENT_URL }}"
+            SES_FROM_EMAIL="${{ secrets.PRODUCTION_SES_FROM_EMAIL }}"
           fi
           sam deploy --config-env $ENV_NAME --no-confirm-changeset --no-fail-on-empty-changeset \
-            --parameter-overrides "StripeSecretKey=$STRIPE_KEY ClientUrl=$CLIENT_URL"
+            --parameter-overrides "StripeSecretKey=$STRIPE_KEY StripeWebhookSecret=$STRIPE_WEBHOOK_SECRET ClientUrl=$CLIENT_URL SesFromEmail=$SES_FROM_EMAIL"
 
       - name: Deploy client to S3
         run: |

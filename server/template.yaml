@@ -18,6 +18,15 @@ Parameters:
     Type: String
     Default: ""
     Description: Frontend base URL used for Stripe success/cancel redirects (e.g. https://xxxx.cloudfront.net).
+  StripeWebhookSecret:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Stripe webhook signing secret (whsec_...) for the /payments/webhook endpoint.
+  SesFromEmail:
+    Type: String
+    Default: ""
+    Description: SES-verified sender email address used for buyer/seller payment notifications.
   CognitoUserPoolId:
     Type: String
     Default: ""
@@ -615,9 +624,14 @@ Resources:
         Variables:
           STRIPE_SECRET_KEY: !Ref StripeSecretKey
           CLIENT_URL: !Ref ClientUrl
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ProductsTable
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:ListUsers
+              Resource: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
       Events:
         Api:
           Type: Api
@@ -635,9 +649,14 @@ Resources:
         Variables:
           STRIPE_SECRET_KEY: !Ref StripeSecretKey
           CLIENT_URL: !Ref ClientUrl
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ProductsTable
+        - Statement:
+            - Effect: Allow
+              Action: cognito-idp:ListUsers
+              Resource: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
       Events:
         Api:
           Type: Api
@@ -645,6 +664,35 @@ Resources:
             RestApiId: !Ref MarketplaceApi
             Path: /payments/checkout-single
             Method: POST
+
+  StripeWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: handlers/payments/stripeWebhook/
+      Handler: index.handler
+      Environment:
+        Variables:
+          STRIPE_SECRET_KEY: !Ref StripeSecretKey
+          STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
+          SES_FROM_EMAIL: !Ref SesFromEmail
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref CartsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: "*"
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MarketplaceApi
+            Path: /payments/webhook
+            Method: POST
+            Auth:
+              Authorizer: NONE
 
 Outputs:
   EnvironmentName:
