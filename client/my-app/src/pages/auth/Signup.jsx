@@ -13,6 +13,7 @@ const Signup = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,8 +22,9 @@ const Signup = () => {
 
     try {
       await signUp(formData.username, formData.email, formData.password);
-      alert("Signup successful! Please login.");
-      navigate("/login");
+      setSuccess(true);
+      // Auto-redirect to login after 2 seconds
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(err.message || "Signup failed. Try again.");
     } finally {
@@ -200,6 +202,21 @@ const Signup = () => {
           <div className="signup-icon">🚀</div>
           <h3 className="signup-title">Create Account</h3>
 
+          {success && (
+            <div style={{
+              borderRadius: 12,
+              background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
+              color: "#065f46",
+              padding: "1rem",
+              marginBottom: "1.5rem",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+              textAlign: "center",
+            }}>
+              ✅ Account created! Redirecting to login…
+            </div>
+          )}
+
           {error && (
             <div className="modern-alert">
               <strong>Error:</strong> {error}
@@ -246,13 +263,15 @@ const Signup = () => {
             <Button 
               type="submit" 
               className="w-100 modern-btn-primary" 
-              disabled={loading}
+              disabled={loading || success}
             >
               {loading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
                   Creating account...
                 </>
+              ) : success ? (
+                "Account Created!"
               ) : (
                 "Sign Up"
               )}
