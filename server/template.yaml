@@ -723,13 +723,16 @@ Resources:
               Authorizer: NONE
 
   # --- Cognito Triggers ---
+  # This Lambda runs every time a new user signs up.
+  # It tells Cognito to skip the verification email and confirm the user right away.
   CognitoPreSignUpFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: handlers/cognito/preSignUp/
       Handler: index.handler
-      Description: "Cognito Pre Sign-up trigger: auto-confirms users and verifies email so no verification email is sent."
+      Description: "Cognito Pre Sign-up trigger: auto-confirms users and verifies email."
 
+  # Allows Cognito to call the Lambda above.
   CognitoPreSignUpPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -737,34 +740,6 @@ Resources:
       FunctionName: !GetAtt CognitoPreSignUpFunction.Arn
       Principal: cognito-idp.amazonaws.com
       SourceArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
-
-  # Custom Resource: automatically attaches the Pre Sign-up Lambda to the
-  # Cognito User Pool on every deploy — no manual console step required.
-  CognitoTriggerAttacherFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: handlers/cognito/attachTrigger/
-      Handler: index.handler
-      Description: "CloudFormation Custom Resource that wires the Pre Sign-up trigger to the Cognito User Pool."
-      Timeout: 30
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - cognito-idp:UpdateUserPool
-                - cognito-idp:DescribeUserPool
-              Resource: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}"
-
-  CognitoPreSignUpTriggerAttachment:
-    Type: Custom::AttachCognitoPreSignUpTrigger
-    DependsOn:
-      - CognitoPreSignUpFunction
-      - CognitoPreSignUpPermission
-      - CognitoTriggerAttacherFunction
-    Properties:
-      ServiceToken: !GetAtt CognitoTriggerAttacherFunction.Arn
-      UserPoolId: !Ref CognitoUserPoolId
-      PreSignUpLambdaArn: !GetAtt CognitoPreSignUpFunction.Arn
 
 Outputs:
   EnvironmentName:
@@ -819,5 +794,8 @@ Outputs:
     Value: "No API Gateway authorizer is configured for this environment."
 
   CognitoPreSignUpFunctionArn:
-    Description: ARN of the Pre Sign-up Lambda — attach this as the Cognito Pre sign-up trigger
+    Description: >
+      ARN of the Pre Sign-up Lambda. After deploying, go to the Cognito console →
+      your User Pool → User Pool Properties → Add Lambda trigger → Pre sign-up →
+      select this Lambda. You only need to do this once.
     Value: !GetAtt CognitoPreSignUpFunction.Arn
