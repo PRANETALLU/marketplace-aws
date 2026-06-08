@@ -323,10 +323,24 @@ const Dashboard = () => {
                               {new Date(o.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
                             </div>
                           )}
+                          {Array.isArray(o.items) && o.items.length > 0 && (
+                            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 4 }}>
+                              {o.items.map((item, i) => (
+                                <span key={i}>
+                                  {item.productId?.slice(-6).toUpperCase()} × {item.quantity}
+                                  {i < o.items.length - 1 ? ", " : ""}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="d-flex align-items-center gap-2">
                           {o.status && <span className={`badge-mp ${STATUS_BADGE[o.status] || "badge-neutral"}`}>{o.status}</span>}
-                          {o.totalPrice != null && <span style={{ fontWeight: 800, color: "var(--primary)" }}>${Number(o.totalPrice).toFixed(2)}</span>}
+                          {(o.totalAmount != null || o.totalPrice != null) && (
+                            <span style={{ fontWeight: 800, color: "var(--primary)" }}>
+                              ${Number(o.totalAmount ?? o.totalPrice).toFixed(2)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -366,11 +380,35 @@ const Dashboard = () => {
                               {new Date(o.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
                             </div>
                           )}
-                          {o.productName && <div style={{ fontSize: "0.85rem", marginTop: 4 }}>{o.productName}</div>}
+                          {/* Items list (new schema) */}
+                          {Array.isArray(o.items) && o.items.length > 0 && (
+                            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 4 }}>
+                              {o.items.map((item, i) => (
+                                <span key={i}>
+                                  {item.productId?.slice(-6).toUpperCase()} × {item.quantity}
+                                  {i < o.items.length - 1 ? ", " : ""}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {/* Fallback: legacy single-item schema */}
+                          {!Array.isArray(o.items) && o.productName && (
+                            <div style={{ fontSize: "0.85rem", marginTop: 4 }}>{o.productName}</div>
+                          )}
+                          {o.buyerEmail && (
+                            <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>
+                              Buyer: {o.buyerEmail}
+                            </div>
+                          )}
                         </div>
                         <div className="d-flex align-items-center gap-2 flex-wrap">
                           <span className={`badge-mp ${STATUS_BADGE[o.status] || "badge-neutral"}`}>{o.status || "pending"}</span>
-                          {o.totalPrice != null && <span style={{ fontWeight: 800, color: "var(--primary)" }}>${Number(o.totalPrice).toFixed(2)}</span>}
+                          {/* Support both totalAmount (new) and totalPrice (legacy) */}
+                          {(o.totalAmount != null || o.totalPrice != null) && (
+                            <span style={{ fontWeight: 800, color: "var(--primary)" }}>
+                              ${Number(o.totalAmount ?? o.totalPrice).toFixed(2)}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div style={{ marginTop: "0.75rem" }}>

@@ -47,7 +47,15 @@ exports.handler = async (event) => {
 
     // Scan all orders and filter for this seller's products
     const orderRes = await db.scan({ TableName: ORDERS_TABLE }).promise();
-    const sellerOrders = (orderRes.Items || []).filter(order => productIds.includes(order.productId));
+    const productIdSet = new Set(productIds);
+    const sellerOrders = (orderRes.Items || []).filter(order => {
+      // Orders written by the webhook use an items[] array
+      if (Array.isArray(order.items)) {
+        return order.items.some(item => productIdSet.has(item.productId));
+      }
+      // Fallback: legacy orders written with a top-level productId
+      return productIdSet.has(order.productId);
+    });
 
     return response(200, sellerOrders);
   } catch (err) {
